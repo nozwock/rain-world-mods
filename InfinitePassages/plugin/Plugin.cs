@@ -31,29 +31,37 @@ public partial class Plugin : BaseUnityPlugin
 
         Logger.LogInfo($"Plugin {Id} is loaded!");
 
-        On.RainWorldGame.CustomEndGameSaveAndRestart += Hook_RainWorldGame_CustomEndGameSaveAndRestart;
-        On.Menu.EndgameTokens.ctor += Hook_EndgameTokens_ctor;
-        On.WinState.ConsumeEndGame += Hook_WinState_ConsumeEndGame;
-        On.WinState.GetNextEndGame += Hook_WinState_GetNextEndGame;
-        On.Menu.SleepAndDeathScreen.Singal += Hook_SleepAndDeathScreen_Singal;
+        try
+        {
+            On.RainWorldGame.CustomEndGameSaveAndRestart += Hook_RainWorldGame_CustomEndGameSaveAndRestart;
+            On.Menu.EndgameTokens.ctor += Hook_EndgameTokens_ctor;
+            On.WinState.ConsumeEndGame += Hook_WinState_ConsumeEndGame;
+            On.WinState.GetNextEndGame += Hook_WinState_GetNextEndGame;
+            On.Menu.SleepAndDeathScreen.Singal += Hook_SleepAndDeathScreen_Singal;
 
-        IL.Menu.SleepAndDeathScreen.Update += IL_SleepAndDeathScreen_Update;
+            IL.Menu.SleepAndDeathScreen.Update += IL_SleepAndDeathScreen_Update;
 
-        customHooks =
-        [
-            // Prevent earnedPassages decrement in Menu.SleepAndDeathScreen.Singal
-            new(
-                typeof(Expedition.ExpeditionData)
-                .GetProperty(nameof(Expedition.ExpeditionData.earnedPassages))
-                .GetSetMethod(),
-                (Action<Action<int>, int>)((orig, value) =>
-                {
-                    if (value < Expedition.ExpeditionData.earnedPassages)
-                        return;
-                    orig.Invoke(value);
-                })),
-        ];
-        LogCustomHooks(customHooks);
+            customHooks =
+            [
+                // Prevent earnedPassages decrement in Menu.SleepAndDeathScreen.Singal
+                new(
+                    typeof(Expedition.ExpeditionData)
+                    .GetProperty(nameof(Expedition.ExpeditionData.earnedPassages))
+                    .GetSetMethod(),
+                    (Action<Action<int>, int>)((orig, value) =>
+                    {
+                        if (value < Expedition.ExpeditionData.earnedPassages)
+                            return;
+                        orig.Invoke(value);
+                    })),
+            ];
+
+            LogCustomHooks(customHooks);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex);
+        }
     }
 
     public void OnDisable()
@@ -64,17 +72,24 @@ public partial class Plugin : BaseUnityPlugin
 
         Logger.LogInfo($"Unloading plugin {Id}");
 
-        On.RainWorldGame.CustomEndGameSaveAndRestart -= Hook_RainWorldGame_CustomEndGameSaveAndRestart;
-        On.Menu.EndgameTokens.ctor -= Hook_EndgameTokens_ctor;
-        On.WinState.ConsumeEndGame -= Hook_WinState_ConsumeEndGame;
-        On.WinState.GetNextEndGame -= Hook_WinState_GetNextEndGame;
-        On.Menu.SleepAndDeathScreen.Singal -= Hook_SleepAndDeathScreen_Singal;
-
-        IL.Menu.SleepAndDeathScreen.Update -= IL_SleepAndDeathScreen_Update;
-
-        foreach (var hook in customHooks)
+        try
         {
-            hook?.Dispose();
+            On.RainWorldGame.CustomEndGameSaveAndRestart -= Hook_RainWorldGame_CustomEndGameSaveAndRestart;
+            On.Menu.EndgameTokens.ctor -= Hook_EndgameTokens_ctor;
+            On.WinState.ConsumeEndGame -= Hook_WinState_ConsumeEndGame;
+            On.WinState.GetNextEndGame -= Hook_WinState_GetNextEndGame;
+            On.Menu.SleepAndDeathScreen.Singal -= Hook_SleepAndDeathScreen_Singal;
+
+            IL.Menu.SleepAndDeathScreen.Update -= IL_SleepAndDeathScreen_Update;
+
+            foreach (var hook in customHooks)
+            {
+                hook?.Dispose();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex);
         }
     }
 
