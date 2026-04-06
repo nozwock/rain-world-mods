@@ -1,0 +1,30 @@
+set dotenv-required
+
+# Define MOD_PATH in .env
+# RainWorld_Data/StreamingAssets/mods/
+# No backslashes in path
+
+default: build
+
+build:
+    if [ -f plugin/*.csproj ]; then \
+        dotnet publish -c Release -p:SkipCopyMod=true plugin/*.csproj; \
+    fi
+
+[script]
+copy: build
+    {{assert(env('MOD_PATH', '') != '', 'Missing MOD_PATH')}}
+
+    dest="$MOD_PATH/{{file_name(justfile_directory())}}"
+
+    rm -rf "$dest"
+    mkdir -p "$dest"
+
+    find . -mindepth 1 -maxdepth 1 ! -name 'plugin' ! -name 'justfile' -exec cp -r {} "$dest" \;
+
+    if [ -f plugin/*.csproj ]; then
+        mkdir -p "$dest/plugins"
+        cp -t "$dest/plugins" plugin/bin/Release/*/publish/*
+    fi
+
+# TODO: Add export recipe for zip archive

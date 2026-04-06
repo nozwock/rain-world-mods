@@ -1,0 +1,74 @@
+<Project>
+  <!-- Define GamePath property in Local.props -->
+  <Import Project="Local.props" Condition="Exists('Local.props')" />
+  <PropertyGroup Condition="'$(GamePath)' != ''">
+    <DllDir>$(GamePath)/RainWorld_Data/Managed/</DllDir>
+
+    <!-- After building, copy the plugin dll to this folder. Useful for hot-reloading:
+    https://github.com/BepInEx/BepInEx.Debug/blob/master/README.md#scriptengine
+
+    Set LoadOnStart and IncludeSubdirectories to true in ScriptEngine's config -->
+    <!-- <PluginDir>$(GamePath)/BepInEx/scripts/</PluginDir> -->
+
+    <PluginDir>$(GamePath)/BepInEx/plugins/</PluginDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>14</LangVersion>
+    <RestoreAdditionalProjectSources>
+      https://api.nuget.org/v3/index.json;
+      https://nuget.bepinex.dev/v3/index.json;
+      https://nuget.samboy.dev/v3/index.json
+    </RestoreAdditionalProjectSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
+    <PackageReference Include="BepInEx.Core" Version="5.*" PrivateAssets="all" />
+    <PackageReference Include="UnityEngine.Modules" Version="2020.3.45" IncludeAssets="compile" />
+
+    <!-- Requires SDK 10+ -->
+    <!-- Doesn't support BepInEx 6, will need to fork it -->
+    <PackageReference Include="Hamunii.BepInEx.AutoPlugin" Version="2.1" PrivateAssets="all"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="$(GamePath)/BepInEx/plugins/HOOKS-Assembly-CSharp.dll">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="$(GamePath)/BepInEx/utils/PUBLIC-Assembly-CSharp.dll">
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2"
+      PrivateAssets="all" />
+  </ItemGroup>
+
+  <Target Name="CleanupPublishDir" AfterTargets="Publish">
+    <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+      <FilesToDelete Include="$(PublishDir)*.deps.json;" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)' == 'Release'">
+      <FilesToDelete Include="$(PublishDir)*.pdb;$(PublishDir)*.deps.json;" />
+    </ItemGroup>
+    <Delete Files="@(FilesToDelete)">
+      <Output TaskParameter="DeletedFiles" ItemName="FilesDeleted" />
+    </Delete>
+  </Target>
+
+  <Target Name="CopyMod" AfterTargets="Publish" Condition="'$(PluginDir)' != '' AND '$(SkipCopyMod)' != 'true'">
+    <!-- .NET 9+ Message will only show up with -v:d or -tl:off in terminals -->
+    <Message Text="Copying mod to &quot;$(PluginDir)&quot;" Importance="High" />
+
+    <!-- https://github.com/dotnet/msbuild/issues/5881#issuecomment-1537643217 -->
+    <ItemGroup>
+      <FilesToCopy Include="$([MSBuild]::EnsureTrailingSlash('$(PublishDir)'))**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(FilesToCopy)"
+      DestinationFolder="$([MSBuild]::EnsureTrailingSlash('$(PluginDir)/$(AssemblyName)'))%(RecursiveDir)" />
+  </Target>
+</Project>
