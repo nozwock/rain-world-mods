@@ -19,49 +19,75 @@ public partial class Plugin : BaseUnityPlugin
 
     List<Hook> customHooks;
 
-    // TODO: Remix config support
+    Configurable<bool> configSkipPassageAnimation;
 
     public void OnEnable()
     {
+        Logger = base.Logger;
+
+        On.RainWorld.OnModsInit += Hook_RainWorld_OnModsInit;
+    }
+
+    void Hook_RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
+    {
+        orig.Invoke(self);
+
         if (isInit)
             return;
         isInit = true;
-
-        Logger = base.Logger;
 
         Logger.LogInfo($"Plugin {Id} is loaded!");
 
         try
         {
-            On.RainWorldGame.CustomEndGameSaveAndRestart += Hook_RainWorldGame_CustomEndGameSaveAndRestart;
-            On.Menu.EndgameTokens.ctor += Hook_EndgameTokens_ctor;
-            On.WinState.ConsumeEndGame += Hook_WinState_ConsumeEndGame;
-            On.WinState.GetNextEndGame += Hook_WinState_GetNextEndGame;
-            On.Menu.SleepAndDeathScreen.Singal += Hook_SleepAndDeathScreen_Singal;
+            // https://rainworldmodding.miraheze.org/wiki/Creating_a_Remix_Menu#Method_1:_Automatically_generating_a_remix_menu
+            var optionInterface = MachineConnector.GetRegisteredOI(Id);
+            var config = optionInterface.config;
 
-            IL.Menu.SleepAndDeathScreen.Update += IL_SleepAndDeathScreen_Update;
+            configSkipPassageAnimation = config.Bind(
+                // Seems to silently fail if key contains spaces and there's no way to specify a display string for auto
+                // generated label, it is what it is
+                "SkipPassageAnimation",
+                defaultValue: true,
+                new ConfigurableInfo(
+                    "Jump straight to Fast Travel screen instead of opening the Passage Token image screen.",
+                    autoTab: "General")
+                );
+            configSkipPassageAnimation.OnChange += Init_Hook_SkipPassageAnimation;
 
-            customHooks =
-            [
-                // Prevent earnedPassages decrement in Menu.SleepAndDeathScreen.Singal
-                new(
-                    typeof(Expedition.ExpeditionData)
-                    .GetProperty(nameof(Expedition.ExpeditionData.earnedPassages))
-                    .GetSetMethod(),
-                    (Action<Action<int>, int>)((orig, value) =>
-                    {
-                        if (value < Expedition.ExpeditionData.earnedPassages)
-                            return;
-                        orig.Invoke(value);
-                    })),
-            ];
-
-            LogCustomHooks(customHooks);
+            InitHooks();
         }
         catch (Exception ex)
         {
             Logger.LogError(ex);
         }
+    }
+
+    void InitHooks()
+    {
+        On.RainWorldGame.CustomEndGameSaveAndRestart += Hook_RainWorldGame_CustomEndGameSaveAndRestart;
+        On.Menu.EndgameTokens.ctor += Hook_EndgameTokens_ctor;
+        On.WinState.ConsumeEndGame += Hook_WinState_ConsumeEndGame;
+        On.WinState.GetNextEndGame += Hook_WinState_GetNextEndGame;
+
+        Init_Hook_SkipPassageAnimation();
+
+        customHooks =
+        [
+            // Prevent earnedPassages decrement in Menu.SleepAndDeathScreen.Singal
+            new(
+                typeof(Expedition.ExpeditionData)
+                .GetProperty(nameof(Expedition.ExpeditionData.earnedPassages))
+                .GetSetMethod(),
+                (Action<Action<int>, int>)((orig, value) =>
+                {
+                    if (value < Expedition.ExpeditionData.earnedPassages)
+                        return;
+                    orig.Invoke(value);
+                })),
+        ];
+
+        LogCustomHooks(customHooks);
     }
 
     public void OnDisable()
@@ -74,13 +100,17 @@ public partial class Plugin : BaseUnityPlugin
 
         try
         {
+            On.RainWorld.OnModsInit -= Hook_RainWorld_OnModsInit;
+
             On.RainWorldGame.CustomEndGameSaveAndRestart -= Hook_RainWorldGame_CustomEndGameSaveAndRestart;
             On.Menu.EndgameTokens.ctor -= Hook_EndgameTokens_ctor;
             On.WinState.ConsumeEndGame -= Hook_WinState_ConsumeEndGame;
             On.WinState.GetNextEndGame -= Hook_WinState_GetNextEndGame;
-            On.Menu.SleepAndDeathScreen.Singal -= Hook_SleepAndDeathScreen_Singal;
 
+            On.Menu.SleepAndDeathScreen.Singal -= Hook_SleepAndDeathScreen_Singal;
             IL.Menu.SleepAndDeathScreen.Update -= IL_SleepAndDeathScreen_Update;
+
+            configSkipPassageAnimation.OnChange -= Init_Hook_SkipPassageAnimation;
 
             foreach (var hook in customHooks)
             {
@@ -107,6 +137,17 @@ public partial class Plugin : BaseUnityPlugin
             {
                 Logger.LogError(msg);
             }
+        }
+    }
+
+    void Init_Hook_SkipPassageAnimation()
+    {
+        On.Menu.SleepAndDeathScreen.Singal -= Hook_SleepAndDeathScreen_Singal;
+        IL.Menu.SleepAndDeathScreen.Update -= IL_SleepAndDeathScreen_Update;
+        if (configSkipPassageAnimation.Value)
+        {
+            On.Menu.SleepAndDeathScreen.Singal += Hook_SleepAndDeathScreen_Singal;
+            IL.Menu.SleepAndDeathScreen.Update += IL_SleepAndDeathScreen_Update;
         }
     }
 
@@ -166,7 +207,6 @@ public partial class Plugin : BaseUnityPlugin
         self.endGameSceneCounter = 999999;
     }
 
-    // TODO: Make this optional in remix config
     // Skip Passage Token image screen on clicking "Passage" for fast travel
     void IL_SleepAndDeathScreen_Update(ILContext il)
     {
