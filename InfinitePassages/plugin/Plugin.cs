@@ -26,6 +26,7 @@ public partial class Plugin : BaseUnityPlugin
 
 		Logger.LogInfo($"Plugin {Id} is loaded!");
 
+        On.Menu.EndgameTokens.ctor += Hook_EndgameTokens_ctor;
 		On.WinState.ConsumeEndGame += Hook_WinState_ConsumeEndGame;
 		On.WinState.GetNextEndGame += Hook_WinState_GetNextEndGame;
 	}
@@ -38,9 +39,25 @@ public partial class Plugin : BaseUnityPlugin
 
 		Logger.LogInfo($"Unloading plugin {Id}");
 
+        On.Menu.EndgameTokens.ctor -= Hook_EndgameTokens_ctor;
 		On.WinState.ConsumeEndGame -= Hook_WinState_ConsumeEndGame;
 		On.WinState.GetNextEndGame -= Hook_WinState_GetNextEndGame;
 	}
+
+    // Reset consumed state for all tokens, for when the tokens are already consumed before the mod is applied
+    void Hook_EndgameTokens_ctor(
+        On.Menu.EndgameTokens.orig_ctor orig,
+        Menu.EndgameTokens self,
+        Menu.Menu menu,
+        Menu.MenuObject owner,
+        UnityEngine.Vector2 pos,
+        FContainer container,
+        Menu.KarmaLadder ladder)
+    {
+        ladder.endGameMeters.ForEach(it => it.tracker.consumed = false);
+
+        orig.Invoke(self, menu, owner, pos, container, ladder);
+    }
 
 	// Skip
 	void Hook_WinState_ConsumeEndGame(On.WinState.orig_ConsumeEndGame orig, WinState self) { }
@@ -52,10 +69,6 @@ public partial class Plugin : BaseUnityPlugin
 		{
 			return orig.Invoke(self);
 		}
-
-		// Reset consumed state for all passages (cosmetic)
-		// TODO: Make this optional
-		self.endgameTrackers.ForEach(it => it.consumed = false);
 
 		// TODO: Optionally skip passage's image on clicking "Passage" for fast travel (Menu.SleepAndDeathScreen.Singal)
 
