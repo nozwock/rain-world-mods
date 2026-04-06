@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using BepInEx;
 using BepInEx.Logging;
+using MonoMod.RuntimeDetour;
 using MoreSlugcats;
 
 namespace InfinitePassages;
@@ -13,8 +15,9 @@ public partial class Plugin : BaseUnityPlugin
 
     bool isInit;
 
+    List<Hook> customHooks;
+
     // TODO: Remix config support
-    // TODO: Support Expedition mode passages as well (Menu.SleepAndDeathScreen.Singal)
 
     public void OnEnable()
     {
@@ -30,6 +33,22 @@ public partial class Plugin : BaseUnityPlugin
         On.Menu.EndgameTokens.ctor += Hook_EndgameTokens_ctor;
         On.WinState.ConsumeEndGame += Hook_WinState_ConsumeEndGame;
         On.WinState.GetNextEndGame += Hook_WinState_GetNextEndGame;
+
+        customHooks =
+        [
+            // Prevent earnedPassages decrement in Menu.SleepAndDeathScreen.Singal
+            new(
+                typeof(Expedition.ExpeditionData)
+                .GetProperty(nameof(Expedition.ExpeditionData.earnedPassages))
+                .GetSetMethod(),
+                (Action<Action<int>, int>)((orig, value) =>
+                {
+                    if (value < Expedition.ExpeditionData.earnedPassages)
+                        return;
+                    orig.Invoke(value);
+                })),
+        ];
+        LogCustomHooks(customHooks);
     }
 
     public void OnDisable()
@@ -44,6 +63,28 @@ public partial class Plugin : BaseUnityPlugin
         On.Menu.EndgameTokens.ctor -= Hook_EndgameTokens_ctor;
         On.WinState.ConsumeEndGame -= Hook_WinState_ConsumeEndGame;
         On.WinState.GetNextEndGame -= Hook_WinState_GetNextEndGame;
+
+        foreach (var hook in customHooks)
+        {
+            hook?.Dispose();
+        }
+    }
+
+    void LogCustomHooks(List<Hook> hooks)
+    {
+        foreach (var hook in hooks)
+        {
+            var msg = $"Custom Hook: {hook.Method.DeclaringType?.Name}.{hook.Method.Name}: "
+                + $"valid={hook.IsValid}, active={hook.IsApplied}";
+            if (hook.IsApplied && hook.IsValid)
+            {
+                Logger.LogInfo(msg);
+            }
+            else
+            {
+                Logger.LogError(msg);
+            }
+        }
     }
 
     void Hook_RainWorldGame_CustomEndGameSaveAndRestart(
