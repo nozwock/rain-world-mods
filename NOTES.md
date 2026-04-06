@@ -10,8 +10,9 @@ RainWorld
 ```
 
 ```cs
-var game = GameObject.Find("Futile")
-    .GetComponent<RainWorld>()
+var game = UnityEngine.Object.FindObjectsOfType<RainWorld>()
+    .Where(it => it.gameObject.name == "Futile")
+    .First()
     .processManager
     .currentMainLoop as RainWorldGame;
 game.FirstRealizedPlayer.AddFood(7);
