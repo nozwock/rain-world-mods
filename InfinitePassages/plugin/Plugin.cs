@@ -116,10 +116,10 @@ public partial class Plugin : BaseUnityPlugin
         orig.Invoke(self, menu, owner, pos, container, ladder);
     }
 
-    // Skip
+    // Skip setting passage .consumed = true
     void Hook_WinState_ConsumeEndGame(On.WinState.orig_ConsumeEndGame orig, WinState self) { }
 
-    // GetNextEndGame: Which "passage" to use for fast travel
+    // Which "passage" to use for fast travel
     WinState.EndgameID Hook_WinState_GetNextEndGame(On.WinState.orig_GetNextEndGame orig, WinState self)
     {
         if (self.endgameTrackers.Count < 1)
