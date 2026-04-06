@@ -71,6 +71,13 @@ public partial class Plugin : BaseUnityPlugin
         }
 
         // TODO: Optionally skip passage's image on clicking "Passage" for fast travel (Menu.SleepAndDeathScreen.Singal)
+        // SleepAndDeathScreen.Singal
+        //      endGameSceneCounter = 1
+        //          switch to CustomEndGameScreen in SleepAndDeathScreen.Update()
+        //
+        // Replace switch to CustomEndGameScreen with:
+        // manager.RequestMainProcessSwitch(ProcessManager.ProcessID.FastTravelScreen);
+
 
         // Randomize the passage being used to avoid always using the same passage (cosmetic) since passages are never
         // consumed
