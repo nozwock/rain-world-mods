@@ -157,22 +157,29 @@ public partial class Plugin : BaseUnityPlugin
     {
         var cursor = new ILCursor(il);
 
-        if (cursor.TryGotoNext(MoveType.Before,
-            i => i.MatchCallOrCallvirt<ProcessManager>(nameof(ProcessManager.RequestMainProcessSwitch))))
+        try
         {
-            cursor.Index--;
-
-            var name = nameof(ProcessManager.ProcessID.CustomEndGameScreen);
-
-            if (cursor.Next.MatchLdsfld<ProcessManager.ProcessID>(name) ||
-                cursor.Next.MatchLdfld<ProcessManager.ProcessID>(name))
+            if (cursor.TryGotoNext(MoveType.Before,
+                i => i.MatchCallOrCallvirt<ProcessManager>(nameof(ProcessManager.RequestMainProcessSwitch))))
             {
-                var field = typeof(ProcessManager.ProcessID)
-                    .GetField(nameof(ProcessManager.ProcessID.FastTravelScreen));
+                cursor.Index--;
 
-                cursor.Next.OpCode = OpCodes.Ldsfld;
-                cursor.Next.Operand = il.Import(field);
+                var name = nameof(ProcessManager.ProcessID.CustomEndGameScreen);
+
+                if (cursor.Next.MatchLdsfld<ProcessManager.ProcessID>(name) ||
+                    cursor.Next.MatchLdfld<ProcessManager.ProcessID>(name))
+                {
+                    var field = typeof(ProcessManager.ProcessID)
+                        .GetField(nameof(ProcessManager.ProcessID.FastTravelScreen));
+
+                    cursor.Next.OpCode = OpCodes.Ldsfld;
+                    cursor.Next.Operand = il.Import(field);
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex);
         }
     }
 }
