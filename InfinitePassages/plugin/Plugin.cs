@@ -26,6 +26,7 @@ public partial class Plugin : BaseUnityPlugin
 
         Logger.LogInfo($"Plugin {Id} is loaded!");
 
+        On.RainWorldGame.CustomEndGameSaveAndRestart += Hook_RainWorldGame_CustomEndGameSaveAndRestart;
         On.Menu.EndgameTokens.ctor += Hook_EndgameTokens_ctor;
         On.WinState.ConsumeEndGame += Hook_WinState_ConsumeEndGame;
         On.WinState.GetNextEndGame += Hook_WinState_GetNextEndGame;
@@ -39,9 +40,18 @@ public partial class Plugin : BaseUnityPlugin
 
         Logger.LogInfo($"Unloading plugin {Id}");
 
+        On.RainWorldGame.CustomEndGameSaveAndRestart -= Hook_RainWorldGame_CustomEndGameSaveAndRestart;
         On.Menu.EndgameTokens.ctor -= Hook_EndgameTokens_ctor;
         On.WinState.ConsumeEndGame -= Hook_WinState_ConsumeEndGame;
         On.WinState.GetNextEndGame -= Hook_WinState_GetNextEndGame;
+    }
+
+    void Hook_RainWorldGame_CustomEndGameSaveAndRestart(
+        On.RainWorldGame.orig_CustomEndGameSaveAndRestart orig,
+        RainWorldGame self,
+        bool addFiveCycles)
+    {
+        orig.Invoke(self, false);
     }
 
     // Reset consumed state for all tokens, for when the tokens are already consumed before the mod is applied
