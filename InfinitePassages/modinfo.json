@@ -4,7 +4,7 @@
     "version": "1.0.0",
     "target_game_version": "v1.11.6",
     "authors": "nozwock",
-    "description": "",
+    "description": "Prevents Passage Tokens from being consumed and restores any that are already consumed, reduces the Fast Travel's Cycles cost from 5 to 1, and optionally skips the Passage Token animation to jump straight to the Fast Travel menu.",
     "requirements": [],
     "requirements_names": [],
     "priorities": [],
