@@ -35,6 +35,7 @@ public partial class Plugin : BaseUnityPlugin
         On.Menu.EndgameTokens.ctor += Hook_EndgameTokens_ctor;
         On.WinState.ConsumeEndGame += Hook_WinState_ConsumeEndGame;
         On.WinState.GetNextEndGame += Hook_WinState_GetNextEndGame;
+        On.Menu.SleepAndDeathScreen.Singal += Hook_SleepAndDeathScreen_Singal;
 
         IL.Menu.SleepAndDeathScreen.Update += IL_SleepAndDeathScreen_Update;
 
@@ -67,6 +68,7 @@ public partial class Plugin : BaseUnityPlugin
         On.Menu.EndgameTokens.ctor -= Hook_EndgameTokens_ctor;
         On.WinState.ConsumeEndGame -= Hook_WinState_ConsumeEndGame;
         On.WinState.GetNextEndGame -= Hook_WinState_GetNextEndGame;
+        On.Menu.SleepAndDeathScreen.Singal -= Hook_SleepAndDeathScreen_Singal;
 
         IL.Menu.SleepAndDeathScreen.Update -= IL_SleepAndDeathScreen_Update;
 
@@ -135,6 +137,18 @@ public partial class Plugin : BaseUnityPlugin
             .Select(it => it.ID);
 
         return availablePassageIds.ElementAt(new Random().Next(0, availablePassageIds.Count()));
+    }
+
+    void Hook_SleepAndDeathScreen_Singal(
+        On.Menu.SleepAndDeathScreen.orig_Singal orig,
+        Menu.SleepAndDeathScreen self,
+        Menu.MenuObject sender,
+        string message)
+    {
+        orig.Invoke(self, sender, message);
+
+        // Skip Passage Token icon glowing animation on clicking "Passage"
+        self.endGameSceneCounter = 999999;
     }
 
     // TODO: Make this optional in remix config
