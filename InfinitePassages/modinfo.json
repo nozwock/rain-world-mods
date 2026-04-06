@@ -1,0 +1,13 @@
+{
+    "id": "InfinitePassages",
+    "name": "Infinite Passages",
+    "version": "1.0.0",
+    "target_game_version": "v1.11.6",
+    "authors": "nozwock",
+    "description": "",
+    "requirements": [],
+    "requirements_names": [],
+    "priorities": [],
+    "tags": [],
+    "checksum_override_version": false
+}
