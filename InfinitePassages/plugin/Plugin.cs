@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using BepInEx;
 using BepInEx.Logging;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using MoreSlugcats;
 
@@ -34,6 +36,8 @@ public partial class Plugin : BaseUnityPlugin
         On.WinState.ConsumeEndGame += Hook_WinState_ConsumeEndGame;
         On.WinState.GetNextEndGame += Hook_WinState_GetNextEndGame;
 
+        IL.Menu.SleepAndDeathScreen.Update += IL_SleepAndDeathScreen_Update;
+
         customHooks =
         [
             // Prevent earnedPassages decrement in Menu.SleepAndDeathScreen.Singal
@@ -63,6 +67,8 @@ public partial class Plugin : BaseUnityPlugin
         On.Menu.EndgameTokens.ctor -= Hook_EndgameTokens_ctor;
         On.WinState.ConsumeEndGame -= Hook_WinState_ConsumeEndGame;
         On.WinState.GetNextEndGame -= Hook_WinState_GetNextEndGame;
+
+        IL.Menu.SleepAndDeathScreen.Update -= IL_SleepAndDeathScreen_Update;
 
         foreach (var hook in customHooks)
         {
@@ -121,15 +127,6 @@ public partial class Plugin : BaseUnityPlugin
             return orig.Invoke(self);
         }
 
-        // TODO: Optionally skip passage's image on clicking "Passage" for fast travel (Menu.SleepAndDeathScreen.Singal)
-        // SleepAndDeathScreen.Singal
-        //      endGameSceneCounter = 1
-        //          switch to CustomEndGameScreen in SleepAndDeathScreen.Update()
-        //
-        // Replace switch to CustomEndGameScreen with:
-        // manager.RequestMainProcessSwitch(ProcessManager.ProcessID.FastTravelScreen);
-
-
         // Randomize the passage being used to avoid always using the same passage (cosmetic) since passages are never
         // consumed
         var availablePassageIds = self.endgameTrackers
@@ -138,5 +135,30 @@ public partial class Plugin : BaseUnityPlugin
             .Select(it => it.ID);
 
         return availablePassageIds.ElementAt(new Random().Next(0, availablePassageIds.Count()));
+    }
+
+    // TODO: Make this optional in remix config
+    // Skip Passage Token image screen on clicking "Passage" for fast travel
+    void IL_SleepAndDeathScreen_Update(ILContext il)
+    {
+        var cursor = new ILCursor(il);
+
+        if (cursor.TryGotoNext(MoveType.Before,
+            i => i.MatchCallOrCallvirt<ProcessManager>(nameof(ProcessManager.RequestMainProcessSwitch))))
+        {
+            cursor.Index--;
+
+            var name = nameof(ProcessManager.ProcessID.CustomEndGameScreen);
+
+            if (cursor.Next.MatchLdsfld<ProcessManager.ProcessID>(name) ||
+                cursor.Next.MatchLdfld<ProcessManager.ProcessID>(name))
+            {
+                var field = typeof(ProcessManager.ProcessID)
+                    .GetField(nameof(ProcessManager.ProcessID.FastTravelScreen));
+
+                cursor.Next.OpCode = OpCodes.Ldsfld;
+                cursor.Next.Operand = il.Import(field);
+            }
+        }
     }
 }
