@@ -236,23 +236,16 @@ public partial class Plugin : BaseUnityPlugin
 
         try
         {
-            if (cursor.TryGotoNext(MoveType.Before,
-                i => i.MatchCallOrCallvirt<ProcessManager>(nameof(ProcessManager.RequestMainProcessSwitch))))
-            {
-                cursor.Index--;
+            var name = nameof(ProcessManager.ProcessID.CustomEndGameScreen);
+            cursor.GotoNext(MoveType.Before,
+                i => i.MatchLdsfld<ProcessManager.ProcessID>(name)
+                    || i.MatchLdfld<ProcessManager.ProcessID>(name),
+                i => i.MatchCallOrCallvirt<ProcessManager>(nameof(ProcessManager.RequestMainProcessSwitch)));
 
-                var name = nameof(ProcessManager.ProcessID.CustomEndGameScreen);
-
-                if (cursor.Next.MatchLdsfld<ProcessManager.ProcessID>(name) ||
-                    cursor.Next.MatchLdfld<ProcessManager.ProcessID>(name))
-                {
-                    var field = typeof(ProcessManager.ProcessID)
-                        .GetField(nameof(ProcessManager.ProcessID.FastTravelScreen));
-
-                    cursor.Next.OpCode = OpCodes.Ldsfld;
-                    cursor.Next.Operand = il.Import(field);
-                }
-            }
+            var field = typeof(ProcessManager.ProcessID)
+                .GetField(nameof(ProcessManager.ProcessID.FastTravelScreen));
+            cursor.Next.OpCode = OpCodes.Ldsfld;
+            cursor.Next.Operand = il.Import(field);
         }
         catch (Exception ex)
         {
