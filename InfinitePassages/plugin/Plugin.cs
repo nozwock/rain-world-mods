@@ -128,7 +128,7 @@ public partial class Plugin : BaseUnityPlugin
 
             foreach (var hook in customHooks)
             {
-                hook?.Dispose();
+                hook.Dispose();
             }
         }
         catch (Exception ex)
