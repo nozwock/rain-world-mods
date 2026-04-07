@@ -20,6 +20,7 @@ public partial class Plugin : BaseUnityPlugin
     List<Hook> customHooks;
 
     Configurable<bool> configSkipPassageAnimation;
+    Configurable<bool> configNoKarmaRecovery;
 
     public void OnEnable()
     {
@@ -55,6 +56,15 @@ public partial class Plugin : BaseUnityPlugin
                 );
             configSkipPassageAnimation.OnChange += Init_Hook_SkipPassageAnimation;
 
+            configNoKarmaRecovery = config.Bind(
+                "NoKarmaRecovery",
+                defaultValue: true,
+                new ConfigurableInfo(
+                    "Don't regain Max Karma on Fast Travel.",
+                    autoTab: "General")
+                );
+            configNoKarmaRecovery.OnChange += Init_Hook_NoKarmaRecovery;
+
             InitHooks();
         }
         catch (Exception ex)
@@ -71,6 +81,7 @@ public partial class Plugin : BaseUnityPlugin
         On.WinState.GetNextEndGame += Hook_WinState_GetNextEndGame;
 
         Init_Hook_SkipPassageAnimation();
+        Init_Hook_NoKarmaRecovery();
 
         customHooks =
         [
@@ -110,6 +121,8 @@ public partial class Plugin : BaseUnityPlugin
             On.Menu.SleepAndDeathScreen.Singal -= Hook_SleepAndDeathScreen_Singal;
             IL.Menu.SleepAndDeathScreen.Update -= IL_SleepAndDeathScreen_Update;
 
+            IL.SaveState.ApplyCustomEndGame -= IL_SaveState_ApplyCustomEndGame;
+
             configSkipPassageAnimation.OnChange -= Init_Hook_SkipPassageAnimation;
 
             foreach (var hook in customHooks)
@@ -148,6 +161,15 @@ public partial class Plugin : BaseUnityPlugin
         {
             On.Menu.SleepAndDeathScreen.Singal += Hook_SleepAndDeathScreen_Singal;
             IL.Menu.SleepAndDeathScreen.Update += IL_SleepAndDeathScreen_Update;
+        }
+    }
+
+    void Init_Hook_NoKarmaRecovery()
+    {
+        IL.SaveState.ApplyCustomEndGame -= IL_SaveState_ApplyCustomEndGame;
+        if (configNoKarmaRecovery.Value)
+        {
+            IL.SaveState.ApplyCustomEndGame += IL_SaveState_ApplyCustomEndGame;
         }
     }
 
@@ -231,6 +253,39 @@ public partial class Plugin : BaseUnityPlugin
                     cursor.Next.Operand = il.Import(field);
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex);
+        }
+    }
+
+    private void IL_SaveState_ApplyCustomEndGame(ILContext il)
+    {
+        var cursor = new ILCursor(il);
+
+        try
+        {
+            cursor.GotoNext(
+                MoveType.Before,
+                i => i.MatchLdfld<DeathPersistentSaveData>(nameof(DeathPersistentSaveData.karmaCap)),
+                i => i.MatchStfld<DeathPersistentSaveData>(nameof(DeathPersistentSaveData.karma))
+            );
+            cursor.Next.Operand = typeof(DeathPersistentSaveData)
+                .GetField(nameof(DeathPersistentSaveData.karma));
+
+            // There's WorldCoordinate? karmaFlowerPosition as well that is getting nulled, but it's probably best to
+            // let the flower be reset assuming the player is moving far away from the region the flower is in
+
+            // cursor.Index = 0;
+            // cursor.GotoNext(
+            //     MoveType.Before,
+            //     i => i.MatchLdarg(0),
+            //     i => i.MatchLdfld<SaveState>(nameof(SaveState.deathPersistentSaveData)),
+            //     i => i.MatchLdflda<DeathPersistentSaveData>(nameof(DeathPersistentSaveData.karmaFlowerPosition)),
+            //     i => i.MatchInitobj<WorldCoordinate?>()
+            // );
+            // cursor.RemoveRange(4);
         }
         catch (Exception ex)
         {
