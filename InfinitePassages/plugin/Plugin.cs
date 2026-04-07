@@ -124,6 +124,7 @@ public partial class Plugin : BaseUnityPlugin
             IL.SaveState.ApplyCustomEndGame -= IL_SaveState_ApplyCustomEndGame;
 
             configSkipPassageAnimation.OnChange -= Init_Hook_SkipPassageAnimation;
+            configNoKarmaRecovery.OnChange -= Init_Hook_NoKarmaRecovery;
 
             foreach (var hook in customHooks)
             {
