@@ -54,7 +54,7 @@ public partial class Plugin : BaseUnityPlugin
                     "Jump straight to Fast Travel screen instead of opening the Passage Token image screen.",
                     autoTab: "General")
                 );
-            configSkipPassageAnimation.OnChange += Init_Hook_SkipPassageAnimation;
+            configSkipPassageAnimation.OnChange += InitHooks_SkipPassageAnimation;
 
             configNoKarmaRecovery = config.Bind(
                 "NoKarmaRecovery",
@@ -63,7 +63,7 @@ public partial class Plugin : BaseUnityPlugin
                     "Don't regain Max Karma on Fast Travel.",
                     autoTab: "General")
                 );
-            configNoKarmaRecovery.OnChange += Init_Hook_NoKarmaRecovery;
+            configNoKarmaRecovery.OnChange += InitHooks_NoKarmaRecovery;
 
             InitHooks();
         }
@@ -80,8 +80,8 @@ public partial class Plugin : BaseUnityPlugin
         On.WinState.ConsumeEndGame += Hook_WinState_ConsumeEndGame;
         On.WinState.GetNextEndGame += Hook_WinState_GetNextEndGame;
 
-        Init_Hook_SkipPassageAnimation();
-        Init_Hook_NoKarmaRecovery();
+        InitHooks_SkipPassageAnimation();
+        InitHooks_NoKarmaRecovery();
 
         customHooks =
         [
@@ -123,8 +123,8 @@ public partial class Plugin : BaseUnityPlugin
 
             IL.SaveState.ApplyCustomEndGame -= IL_SaveState_ApplyCustomEndGame;
 
-            configSkipPassageAnimation.OnChange -= Init_Hook_SkipPassageAnimation;
-            configNoKarmaRecovery.OnChange -= Init_Hook_NoKarmaRecovery;
+            configSkipPassageAnimation.OnChange -= InitHooks_SkipPassageAnimation;
+            configNoKarmaRecovery.OnChange -= InitHooks_NoKarmaRecovery;
 
             foreach (var hook in customHooks)
             {
@@ -154,7 +154,7 @@ public partial class Plugin : BaseUnityPlugin
         }
     }
 
-    void Init_Hook_SkipPassageAnimation()
+    void InitHooks_SkipPassageAnimation()
     {
         On.Menu.SleepAndDeathScreen.Singal -= Hook_SleepAndDeathScreen_Singal;
         IL.Menu.SleepAndDeathScreen.Update -= IL_SleepAndDeathScreen_Update;
@@ -165,7 +165,7 @@ public partial class Plugin : BaseUnityPlugin
         }
     }
 
-    void Init_Hook_NoKarmaRecovery()
+    void InitHooks_NoKarmaRecovery()
     {
         IL.SaveState.ApplyCustomEndGame -= IL_SaveState_ApplyCustomEndGame;
         if (configNoKarmaRecovery.Value)
