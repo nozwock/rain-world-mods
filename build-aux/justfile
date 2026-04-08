@@ -4,8 +4,7 @@ set dotenv-required := true
 # RainWorld_Data/StreamingAssets/mods/
 # No backslashes in path
 
-default: build
-
+[default]
 build:
     if [ -f plugin/*.csproj ]; then \
         dotnet publish -c Release -p:SkipCopyMod=true plugin/*.csproj; \
