@@ -1,4 +1,4 @@
-set dotenv-required
+set dotenv-required := true
 
 # Define MOD_PATH in .env
 # RainWorld_Data/StreamingAssets/mods/
@@ -11,11 +11,18 @@ build:
         dotnet publish -c Release -p:SkipCopyMod=true plugin/*.csproj; \
     fi
 
+[arg("mods_dir", help="Default is MOD_PATH env var if empty")]
 [script]
-copy: build
-    {{assert(env('MOD_PATH', '') != '', 'Missing MOD_PATH')}}
+copy mods_dir='': build
+    mods_dir='{{ mods_dir }}'
+    if [ '{{ trim(mods_dir) }}' = '' ]; then
+        {{ assert(trim(env('MOD_PATH', '')) != '', 'Missing or empty MOD_PATH env var') }}
+        mods_dir="$MOD_PATH"
+    fi
 
-    dest="$MOD_PATH/{{file_name(justfile_directory())}}"
+    dest="$mods_dir/{{ file_name(justfile_directory()) }}"
+
+    echo "Copying mod to \"$dest\""
 
     rm -rf "$dest"
     mkdir -p "$dest"
