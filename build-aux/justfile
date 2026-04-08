@@ -12,7 +12,7 @@ build:
 
 [arg("mods_dir", help="Default is MOD_PATH env var if empty")]
 [script]
-copy mods_dir='': build
+install mods_dir='': build
     mods_dir='{{ mods_dir }}'
     if [ '{{ trim(mods_dir) }}' = '' ]; then
         {{ assert(trim(env('MOD_PATH', '')) != '', 'Missing or empty MOD_PATH env var') }}
