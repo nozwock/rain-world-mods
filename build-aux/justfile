@@ -10,6 +10,22 @@ build:
         dotnet publish -c Release -p:SkipCopyMod=true plugin/*.csproj; \
     fi
 
+[script]
+_copy-mod-to mods_dir:
+    {{ assert(trim(mods_dir) != '', 'Empty mods_dir') }}
+
+    dest="{{ mods_dir }}"
+    mkdir -p "$dest"
+
+    echo >&2 "Copying mod to \"$dest\""
+
+    find . -mindepth 1 -maxdepth 1 ! -name 'plugin' ! -name 'justfile' -exec cp -r {} "$dest" \;
+
+    if [ -f plugin/*.csproj ]; then
+        mkdir -p "$dest/plugins"
+        cp -t "$dest/plugins" plugin/bin/Release/*/publish/*
+    fi
+
 [arg("mods_dir", help="Default is MOD_PATH env var if empty")]
 [script]
 install mods_dir='': build
@@ -21,16 +37,21 @@ install mods_dir='': build
 
     dest="$mods_dir/{{ file_name(justfile_directory()) }}"
 
-    echo "Copying mod to \"$dest\""
-
     rm -rf "$dest"
-    mkdir -p "$dest"
+    just _copy-mod-to "$dest"
 
-    find . -mindepth 1 -maxdepth 1 ! -name 'plugin' ! -name 'justfile' -exec cp -r {} "$dest" \;
+[doc("Package mod in a zip archive.")]
+[script]
+pack output_dir: build
+    tempdir="$(mktemp -d)"
+    function cleanup() {
+        rm -rf "$tempdir"
+    }
+    trap cleanup EXIT
 
-    if [ -f plugin/*.csproj ]; then
-        mkdir -p "$dest/plugins"
-        cp -t "$dest/plugins" plugin/bin/Release/*/publish/*
-    fi
+    modname="{{ file_name(justfile_directory()) }}"
+    dest="$tempdir"
 
-# TODO: Add export recipe for zip archive
+    just _copy-mod-to "$dest"
+
+    7z a "{{ output_dir }}/$modname.zip" "$dest"/*
