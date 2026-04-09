@@ -1,7 +1,7 @@
 {
     "id": "nozwock.InfinitePassages",
     "name": "Infinite Passages",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "target_game_version": "v1.11.6",
     "authors": "nozwock",
     "description": "Prevents Passage Tokens from being consumed and restores any that are already consumed, reduces the Fast Travel's Cycles cost from 5 to 1, and optionally skips the Passage Token animation to jump straight to the Fast Travel menu.",
