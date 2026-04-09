@@ -1,0 +1,3 @@
+# These must be crlf or else there will be weird issues
+text/text_*/*.txt text eol=crlf
+
