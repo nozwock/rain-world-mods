@@ -46,8 +46,7 @@ public partial class Plugin : BaseUnityPlugin
             var config = optionInterface.config;
 
             configSkipPassageAnimation = config.Bind(
-                // Seems to silently fail if key contains spaces and there's no way to specify a display string for auto
-                // generated label, it is what it is
+                // Will silently fail if key contains spaces
                 "SkipPassageAnimation",
                 defaultValue: true,
                 new ConfigurableInfo(
