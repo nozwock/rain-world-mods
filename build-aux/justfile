@@ -54,4 +54,7 @@ pack output_dir: build
 
     just _copy-mod-to "$dest"
 
-    7z a "{{ output_dir }}/$modname.zip" "$dest"/*
+    zip="{{ output_dir }}/$modname.zip"
+    rm -f "$zip"
+
+    7z a "$zip" "$dest"/*
