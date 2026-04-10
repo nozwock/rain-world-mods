@@ -149,7 +149,7 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
     /// <summary>
     /// Does nothing if `Debug` log level is unset.
     /// </summary>
-    public void LogAllPatchedMethods(bool includeHookGen = false)
+    public void LogPatchedMethods(bool includeHookGen = false)
     {
         static string GetMsg(HookType kind, MethodBase from, MethodBase to)
         {
