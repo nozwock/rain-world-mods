@@ -149,6 +149,7 @@ public partial class Plugin : BaseUnityPlugin
         orig(value);
     }
 
+    // Have Fast Travel's cycles cost be 1 instead of 5
     void Hook_RainWorldGame_CustomEndGameSaveAndRestart(
         On.RainWorldGame.orig_CustomEndGameSaveAndRestart orig,
         RainWorldGame self,
@@ -222,6 +223,7 @@ public partial class Plugin : BaseUnityPlugin
         cursor.Next.Operand = il.Import(field);
     }
 
+    // Remove max Karma regain on Fast Travel
     void IL_SaveState_ApplyCustomEndGame(ILContext il)
     {
         var cursor = new ILCursor(il);
