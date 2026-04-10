@@ -259,7 +259,7 @@ public partial class Plugin : BaseUnityPlugin
         }
     }
 
-    private void IL_SaveState_ApplyCustomEndGame(ILContext il)
+    void IL_SaveState_ApplyCustomEndGame(ILContext il)
     {
         var cursor = new ILCursor(il);
 
