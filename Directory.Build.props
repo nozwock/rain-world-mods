@@ -24,6 +24,12 @@
     </RestoreAdditionalProjectSources>
   </PropertyGroup>
 
+  <!-- Shared source for mods
+  https://github.com/dotnet/sdk/issues/2511#issuecomment-1374125096 -->
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)/Common/**/*.cs" LinkBase="Common" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.4.17" PrivateAssets="all" />
