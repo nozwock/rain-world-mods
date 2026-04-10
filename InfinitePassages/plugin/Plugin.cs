@@ -24,7 +24,7 @@ public partial class Plugin : BaseUnityPlugin
 
     bool isInit;
 
-    List<Hook> customHooks;
+    List<Hook> manualHooks;
 
     Configurable<bool> configSkipPassageAnimation;
     Configurable<bool> configNoKarmaRecovery;
@@ -89,9 +89,9 @@ public partial class Plugin : BaseUnityPlugin
         InitHooks_SkipPassageAnimation();
         InitHooks_NoKarmaRecovery();
 
-        customHooks =
+        manualHooks =
         [
-            // Prevent earnedPassages decrement in Menu.SleepAndDeathScreen.Singal
+            // Prevent Expedition gamemode's earnedPassages decrement in Menu.SleepAndDeathScreen.Singal
             new(
                 typeof(Expedition.ExpeditionData)
                 .GetProperty(nameof(Expedition.ExpeditionData.earnedPassages))
@@ -103,8 +103,7 @@ public partial class Plugin : BaseUnityPlugin
                     orig.Invoke(value);
                 })),
         ];
-
-        LogCustomHooks(customHooks);
+        LogHooks(manualHooks);
     }
 
     public void OnDisable()
@@ -120,14 +119,11 @@ public partial class Plugin : BaseUnityPlugin
             MonoMod.RuntimeDetour.HookGen.HookEndpointManager
                 .RemoveAllOwnedBy(Assembly.GetExecutingAssembly());
 
+            manualHooks.ForEach(hook => hook.Dispose());
+            manualHooks.Clear();
 
             configSkipPassageAnimation.OnChange -= InitHooks_SkipPassageAnimation;
             configNoKarmaRecovery.OnChange -= InitHooks_NoKarmaRecovery;
-
-            foreach (var hook in customHooks)
-            {
-                hook.Dispose();
-            }
         }
         catch (Exception ex)
         {
@@ -135,20 +131,16 @@ public partial class Plugin : BaseUnityPlugin
         }
     }
 
-    void LogCustomHooks(List<Hook> hooks)
+    void LogHooks(IReadOnlyList<Hook> hooks)
     {
         foreach (var hook in hooks)
         {
-            var msg = $"Custom Hook: {hook.Method.DeclaringType?.Name}.{hook.Method.Name}: "
+            var msg = $"Manual Hook: {hook.Method.DeclaringType?.Name}.{hook.Method.Name}: "
                 + $"valid={hook.IsValid}, active={hook.IsApplied}";
             if (hook.IsApplied && hook.IsValid)
-            {
                 Logger.LogInfo(msg);
-            }
             else
-            {
                 Logger.LogError(msg);
-            }
         }
     }
 
