@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Security.Permissions;
 using BepInEx;
 using BepInEx.Logging;
+using Common.Hooks;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
-using MonoMod.RuntimeDetour;
 using MoreSlugcats;
 
 // Allows access to private members on runtime
@@ -24,7 +23,7 @@ public partial class Plugin : BaseUnityPlugin
 
     bool isInit;
 
-    List<Hook> manualHooks;
+    ManagedHooks managedHooks;
 
     Configurable<bool> configSkipPassageAnimation;
     Configurable<bool> configNoKarmaRecovery;
@@ -81,6 +80,8 @@ public partial class Plugin : BaseUnityPlugin
 
     void InitHooks()
     {
+        managedHooks = new(Logger);
+
         On.RainWorldGame.CustomEndGameSaveAndRestart += Hook_RainWorldGame_CustomEndGameSaveAndRestart;
         On.Menu.EndgameTokens.ctor += Hook_EndgameTokens_ctor;
         On.WinState.ConsumeEndGame += Hook_WinState_ConsumeEndGame;
@@ -89,21 +90,11 @@ public partial class Plugin : BaseUnityPlugin
         InitHooks_SkipPassageAnimation();
         InitHooks_NoKarmaRecovery();
 
-        manualHooks =
-        [
-            // Prevent Expedition gamemode's earnedPassages decrement in Menu.SleepAndDeathScreen.Singal
-            new(
-                typeof(Expedition.ExpeditionData)
-                .GetProperty(nameof(Expedition.ExpeditionData.earnedPassages))
-                .GetSetMethod(),
-                (Action<Action<int>, int>)((orig, value) =>
-                {
-                    if (value < Expedition.ExpeditionData.earnedPassages)
-                        return;
-                    orig.Invoke(value);
-                })),
-        ];
-        LogHooks(manualHooks);
+        managedHooks.Add(
+            typeof(Expedition.ExpeditionData)
+            .GetProperty(nameof(Expedition.ExpeditionData.earnedPassages))
+            .GetSetMethod(),
+            Hook_ExpeditionData_set_earnedPassages);
     }
 
     public void OnDisable()
@@ -119,8 +110,7 @@ public partial class Plugin : BaseUnityPlugin
             MonoMod.RuntimeDetour.HookGen.HookEndpointManager
                 .RemoveAllOwnedBy(Assembly.GetExecutingAssembly());
 
-            manualHooks.ForEach(hook => hook.Dispose());
-            manualHooks.Clear();
+            managedHooks.Dispose();
 
             configSkipPassageAnimation.OnChange -= InitHooks_SkipPassageAnimation;
             configNoKarmaRecovery.OnChange -= InitHooks_NoKarmaRecovery;
@@ -128,19 +118,6 @@ public partial class Plugin : BaseUnityPlugin
         catch (Exception ex)
         {
             Logger.LogError(ex);
-        }
-    }
-
-    void LogHooks(IReadOnlyList<Hook> hooks)
-    {
-        foreach (var hook in hooks)
-        {
-            var msg = $"Manual Hook: {hook.Method.DeclaringType?.Name}.{hook.Method.Name}: "
-                + $"valid={hook.IsValid}, active={hook.IsApplied}";
-            if (hook.IsApplied && hook.IsValid)
-                Logger.LogInfo(msg);
-            else
-                Logger.LogError(msg);
         }
     }
 
@@ -162,6 +139,14 @@ public partial class Plugin : BaseUnityPlugin
         {
             IL.SaveState.ApplyCustomEndGame += IL_SaveState_ApplyCustomEndGame;
         }
+    }
+
+    // Prevent Expedition gamemode's earnedPassages decrement in Menu.SleepAndDeathScreen.Singal
+    void Hook_ExpeditionData_set_earnedPassages(Action<int> orig, int value)
+    {
+        if (value < Expedition.ExpeditionData.earnedPassages)
+            return;
+        orig(value);
     }
 
     void Hook_RainWorldGame_CustomEndGameSaveAndRestart(
