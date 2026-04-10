@@ -80,6 +80,8 @@ public partial class Plugin : BaseUnityPlugin
             .GetProperty(nameof(Expedition.ExpeditionData.earnedPassages))
             .GetSetMethod(),
             Hook_ExpeditionData_set_earnedPassages);
+
+        managedHooks.LogPatchedMethods(includeHookGen: true);
     }
 
     public void OnDisable()
