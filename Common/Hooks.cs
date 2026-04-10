@@ -135,7 +135,7 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
         }
     }
 
-    public void LogAllPatchedMethods()
+    public void LogAllPatchedMethods(bool includeHookGen = false)
     {
         foreach (var (method, target, isActive) in GetAllPatchedMethods())
         {
@@ -144,6 +144,19 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
                 logger.LogInfo(msg);
             else
                 logger.LogError(msg);
+        }
+
+        if (includeHookGen)
+        {
+            var hookGenPatches = Utils.GetHookGenPatchedMethods();
+            if (hookGenPatches is not null)
+            {
+                foreach (var (_, method, target) in hookGenPatches)
+                {
+                    var msg = $"Patched: {GetHookString(method, target.Method)}";
+                    logger.LogInfo(msg);
+                }
+            }
         }
     }
 
