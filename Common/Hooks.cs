@@ -9,6 +9,12 @@ using MonoMod.RuntimeDetour;
 
 namespace Common.Hooks;
 
+public enum HookType
+{
+    Hook,
+    ILHook,
+}
+
 public static class Utils
 {
     static readonly Assembly executingAssembly = Assembly.GetExecutingAssembly();
@@ -21,7 +27,7 @@ public static class Utils
     /// <returns>
     /// Item1 (HookType) can be 0 (Hook), or 1 (ILHook).
     /// </returns>
-    public static IEnumerable<(int, MethodBase, Delegate)>? GetHookGenPatchedMethods()
+    public static IEnumerable<(HookType, MethodBase, Delegate)>? GetHookGenPatchedMethods()
     {
         var dict = (IDictionary)fieldOwnedHookLists.GetValue(null);
         if (!dict.Contains(executingAssembly))
@@ -41,7 +47,7 @@ public static class Utils
 
         return hookEntries.Select(hookEntry =>
         (
-            (int)typeField.GetValue(hookEntry),
+            (HookType)typeField.GetValue(hookEntry),
             (MethodBase)methodField.GetValue(hookEntry),
             (Delegate)hookField.GetValue(hookEntry)
         ));
@@ -88,14 +94,19 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
                 detours.Append(new ILHook(method, manipulator));
             else
                 logger.LogDebug(
-                    $"{nameof(ManagedHooks)}: Skipping duplicate ILHook: {GetHookString(method, manipulator.Method)}");
+                    $"{nameof(ManagedHooks)}: Skipping duplicate ILHook: "
+                    + GetILHookString(method, manipulator.Method));
         }
         else
             detourLists[manipulator] = [new ILHook(method, manipulator)];
     }
 
-    public IEnumerable<(MethodBase, MethodBase, bool)> GetAllPatchedMethods()
-        => GetAllHookedMethods().Concat(GetAllModifiedMethods());
+    public IEnumerable<(HookType, MethodBase, MethodBase, bool)> GetAllPatchedMethods()
+        => GetAllHookedMethods()
+            .Select(it => (HookType.Hook, it.Item1, it.Item2, it.Item3))
+            .Concat(
+                GetAllModifiedMethods()
+                .Select(it => (HookType.ILHook, it.Item1, it.Item2, it.Item3)));
 
     public IEnumerable<(MethodBase, MethodBase, bool)> GetAllHookedMethods()
         => detourLists.Values
@@ -137,13 +148,20 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
 
     public void LogAllPatchedMethods(bool includeHookGen = false)
     {
-        foreach (var (method, target, isActive) in GetAllPatchedMethods())
+        static string GetMsg(HookType kind, MethodBase from, MethodBase to)
         {
-            var msg = $"Patched({isActive}): {GetHookString(method, target)}";
-            if (isActive)
-                logger.LogInfo(msg);
-            else
-                logger.LogError(msg);
+            return kind switch
+            {
+                HookType.Hook => $"Hooked: {GetHookString(from, to)}",
+                HookType.ILHook => $"IL Patched: {GetILHookString(from, to)}",
+                _ => ""
+            };
+        }
+
+        foreach (var (kind, method, target, _) in GetAllPatchedMethods().Where(it => it.Item4))
+        {
+            var msg = GetMsg(kind, method, target);
+            logger.LogDebug(msg);
         }
 
         if (includeHookGen)
@@ -151,15 +169,18 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
             var hookGenPatches = Utils.GetHookGenPatchedMethods();
             if (hookGenPatches is not null)
             {
-                foreach (var (_, method, target) in hookGenPatches)
+                foreach (var (kind, method, target) in hookGenPatches)
                 {
-                    var msg = $"Patched: {GetHookString(method, target.Method)}";
-                    logger.LogInfo(msg);
+                    var msg = GetMsg(kind, method, target.Method);
+                    logger.LogDebug(msg);
                 }
             }
         }
     }
 
-    string GetHookString(MethodBase from, MethodBase to)
+    static string GetHookString(MethodBase from, MethodBase to)
         => $"{from.DeclaringType.Name}.{from.Name} -> {to.DeclaringType.Name}.{to.Name}";
+
+    static string GetILHookString(MethodBase from, MethodBase to)
+        => $"{from.DeclaringType.Name}.{from.Name}: Manipulator={to.DeclaringType.Name}.{to.Name}";
 }
