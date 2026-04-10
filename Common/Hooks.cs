@@ -15,19 +15,19 @@ public enum HookType
     ILHook,
 }
 
-public static class Utils
+public static class HookGen
 {
     static readonly Assembly executingAssembly = Assembly.GetExecutingAssembly();
     static readonly FieldInfo fieldOwnedHookLists = typeof(MonoMod.RuntimeDetour.HookGen.HookEndpointManager)
         .GetField("OwnedHookLists", BindingFlags.NonPublic | BindingFlags.Static);
 
-    public static void HookGenUnpatchSelf()
+    public static void UnpatchSelf()
         => MonoMod.RuntimeDetour.HookGen.HookEndpointManager.RemoveAllOwnedBy(executingAssembly);
 
     /// <returns>
     /// Item1 (HookType) can be 0 (Hook), or 1 (ILHook).
     /// </returns>
-    public static IEnumerable<(HookType, MethodBase, Delegate)>? GetHookGenPatchedMethods()
+    public static IEnumerable<(HookType, MethodBase, Delegate)>? GetPatchedMethods()
     {
         var dict = (IDictionary)fieldOwnedHookLists.GetValue(null);
         if (!dict.Contains(executingAssembly))
@@ -166,7 +166,7 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
 
         if (includeHookGen)
         {
-            var hookGenPatches = Utils.GetHookGenPatchedMethods();
+            var hookGenPatches = HookGen.GetPatchedMethods();
             if (hookGenPatches is not null)
             {
                 foreach (var (kind, method, target) in hookGenPatches)

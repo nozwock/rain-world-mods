@@ -92,7 +92,7 @@ public partial class Plugin : BaseUnityPlugin
 
         try
         {
-            Utils.HookGenUnpatchSelf();
+            HookGen.UnpatchSelf();
             managedHooks?.Dispose();
 
             configSkipPassageAnimation?.OnChange -= InitHooks_SkipPassageAnimation;
