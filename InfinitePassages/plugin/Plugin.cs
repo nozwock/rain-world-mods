@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Linq;
-using System.Reflection;
 using BepInEx;
-using BepInEx.Logging;
 using Common.Hooks;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
@@ -13,21 +11,14 @@ namespace InfinitePassages;
 [BepInAutoPlugin(id: "nozwock.InfinitePassages")]
 public partial class Plugin : BaseUnityPlugin
 {
-    internal static new ManualLogSource Logger;
-
     bool isInit;
 
-    ManagedHooks managedHooks;
+    ManagedHooks? managedHooks;
 
-    Configurable<bool> configSkipPassageAnimation;
-    Configurable<bool> configNoKarmaRecovery;
+    Configurable<bool>? configSkipPassageAnimation;
+    Configurable<bool>? configNoKarmaRecovery;
 
-    public void OnEnable()
-    {
-        Logger = base.Logger;
-
-        On.RainWorld.OnModsInit += Hook_RainWorld_OnModsInit;
-    }
+    public void OnEnable() => On.RainWorld.OnModsInit += Hook_RainWorld_OnModsInit;
 
     void Hook_RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
     {
@@ -102,10 +93,10 @@ public partial class Plugin : BaseUnityPlugin
         try
         {
             Utils.HookGenUnpatchSelf();
-            managedHooks.Dispose();
+            managedHooks?.Dispose();
 
-            configSkipPassageAnimation.OnChange -= InitHooks_SkipPassageAnimation;
-            configNoKarmaRecovery.OnChange -= InitHooks_NoKarmaRecovery;
+            configSkipPassageAnimation?.OnChange -= InitHooks_SkipPassageAnimation;
+            configNoKarmaRecovery?.OnChange -= InitHooks_NoKarmaRecovery;
         }
         catch (Exception ex)
         {
@@ -117,7 +108,7 @@ public partial class Plugin : BaseUnityPlugin
     {
         On.Menu.SleepAndDeathScreen.Singal -= Hook_SleepAndDeathScreen_Singal;
         IL.Menu.SleepAndDeathScreen.Update -= IL_SleepAndDeathScreen_Update;
-        if (configSkipPassageAnimation.Value)
+        if (configSkipPassageAnimation!.Value)
         {
             On.Menu.SleepAndDeathScreen.Singal += Hook_SleepAndDeathScreen_Singal;
             IL.Menu.SleepAndDeathScreen.Update += IL_SleepAndDeathScreen_Update;
@@ -127,7 +118,7 @@ public partial class Plugin : BaseUnityPlugin
     void InitHooks_NoKarmaRecovery()
     {
         IL.SaveState.ApplyCustomEndGame -= IL_SaveState_ApplyCustomEndGame;
-        if (configNoKarmaRecovery.Value)
+        if (configNoKarmaRecovery!.Value)
         {
             IL.SaveState.ApplyCustomEndGame += IL_SaveState_ApplyCustomEndGame;
         }
