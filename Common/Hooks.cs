@@ -146,6 +146,9 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
         }
     }
 
+    /// <summary>
+    /// Does nothing if `Debug` log level is unset.
+    /// </summary>
     public void LogAllPatchedMethods(bool includeHookGen = false)
     {
         static string GetMsg(HookType kind, MethodBase from, MethodBase to)
@@ -157,6 +160,9 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
                 _ => ""
             };
         }
+
+        if (!BepInEx.Logging.LogLevel.HasFlag(LogLevel.Debug))
+            return;
 
         foreach (var (kind, method, target, _) in GetAllPatchedMethods().Where(it => it.Item4))
         {
