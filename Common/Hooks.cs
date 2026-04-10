@@ -27,16 +27,16 @@ public static class HookGen
     /// <returns>
     /// Item1 (HookType) can be 0 (Hook), or 1 (ILHook).
     /// </returns>
-    public static IEnumerable<(HookType, MethodBase, Delegate)>? GetPatchedMethods()
+    public static IEnumerable<(HookType, MethodBase, Delegate)> GetPatchedMethods()
     {
         var dict = (IDictionary)fieldOwnedHookLists.GetValue(null);
         if (!dict.Contains(executingAssembly))
-            return null;
+            return [];
 
         var hookEntries = (IEnumerable<object>)dict[executingAssembly];
         var first = hookEntries.FirstOrDefault();
         if (first is null)
-            return null;
+            return [];
 
         var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
         var t = first.GetType();
@@ -172,14 +172,10 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
 
         if (includeHookGen)
         {
-            var hookGenPatches = HookGen.GetPatchedMethods();
-            if (hookGenPatches is not null)
+            foreach (var (kind, method, target) in HookGen.GetPatchedMethods())
             {
-                foreach (var (kind, method, target) in hookGenPatches)
-                {
-                    var msg = GetMsg(kind, method, target.Method);
-                    logger.LogDebug(msg);
-                }
+                var msg = GetMsg(kind, method, target.Method);
+                logger.LogDebug(msg);
             }
         }
     }
