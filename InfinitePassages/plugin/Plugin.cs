@@ -101,9 +101,7 @@ public partial class Plugin : BaseUnityPlugin
 
         try
         {
-            MonoMod.RuntimeDetour.HookGen.HookEndpointManager
-                .RemoveAllOwnedBy(Assembly.GetExecutingAssembly());
-
+            Utils.HookGenUnpatchSelf();
             managedHooks.Dispose();
 
             configSkipPassageAnimation.OnChange -= InitHooks_SkipPassageAnimation;

@@ -8,6 +8,14 @@ using MonoMod.RuntimeDetour;
 
 namespace Common.Hooks;
 
+public static class Utils
+{
+    static readonly Assembly executingAssembly = Assembly.GetExecutingAssembly();
+
+    public static void HookGenUnpatchSelf()
+        => MonoMod.RuntimeDetour.HookGen.HookEndpointManager.RemoveAllOwnedBy(executingAssembly);
+}
+
 public class ManagedHooks(ManualLogSource logger) : IDisposable
 {
     readonly ManualLogSource logger = logger;
