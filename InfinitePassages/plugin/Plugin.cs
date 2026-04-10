@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Security.Permissions;
 using BepInEx;
 using BepInEx.Logging;
@@ -116,17 +117,9 @@ public partial class Plugin : BaseUnityPlugin
 
         try
         {
-            On.RainWorld.OnModsInit -= Hook_RainWorld_OnModsInit;
+            MonoMod.RuntimeDetour.HookGen.HookEndpointManager
+                .RemoveAllOwnedBy(Assembly.GetExecutingAssembly());
 
-            On.RainWorldGame.CustomEndGameSaveAndRestart -= Hook_RainWorldGame_CustomEndGameSaveAndRestart;
-            On.Menu.EndgameTokens.ctor -= Hook_EndgameTokens_ctor;
-            On.WinState.ConsumeEndGame -= Hook_WinState_ConsumeEndGame;
-            On.WinState.GetNextEndGame -= Hook_WinState_GetNextEndGame;
-
-            On.Menu.SleepAndDeathScreen.Singal -= Hook_SleepAndDeathScreen_Singal;
-            IL.Menu.SleepAndDeathScreen.Update -= IL_SleepAndDeathScreen_Update;
-
-            IL.SaveState.ApplyCustomEndGame -= IL_SaveState_ApplyCustomEndGame;
 
             configSkipPassageAnimation.OnChange -= InitHooks_SkipPassageAnimation;
             configNoKarmaRecovery.OnChange -= InitHooks_NoKarmaRecovery;
