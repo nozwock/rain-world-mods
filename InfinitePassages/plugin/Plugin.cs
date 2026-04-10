@@ -37,7 +37,7 @@ public partial class Plugin : BaseUnityPlugin
 
     void Hook_RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
     {
-        orig.Invoke(self);
+        orig(self);
 
         if (isInit)
             return;
@@ -155,7 +155,7 @@ public partial class Plugin : BaseUnityPlugin
         RainWorldGame self,
         bool addFiveCycles)
     {
-        orig.Invoke(self, false);
+        orig(self, false);
     }
 
     // Reset consumed state for all tokens, for when the tokens are already consumed before the mod is applied
@@ -170,7 +170,7 @@ public partial class Plugin : BaseUnityPlugin
     {
         ladder.endGameMeters.ForEach(it => it.tracker.consumed = false);
 
-        orig.Invoke(self, menu, owner, pos, container, ladder);
+        orig(self, menu, owner, pos, container, ladder);
     }
 
     // Skip setting passage .consumed = true
@@ -181,7 +181,7 @@ public partial class Plugin : BaseUnityPlugin
     {
         if (self.endgameTrackers.Count < 1)
         {
-            return orig.Invoke(self);
+            return orig(self);
         }
 
         // Randomize the passage being used to avoid always using the same passage (cosmetic) since passages are never
@@ -200,7 +200,7 @@ public partial class Plugin : BaseUnityPlugin
         Menu.MenuObject sender,
         string message)
     {
-        orig.Invoke(self, sender, message);
+        orig(self, sender, message);
 
         // Skip Passage Token icon glowing animation on clicking "Passage"
         self.endGameSceneCounter = 999999;
