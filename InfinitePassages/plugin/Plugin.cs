@@ -1,18 +1,12 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
-using System.Security.Permissions;
 using BepInEx;
 using BepInEx.Logging;
 using Common.Hooks;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MoreSlugcats;
-
-// Allows access to private members on runtime
-#pragma warning disable CS0618 // It's enforced by the mono runtime game's using
-[assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
-#pragma warning restore CS0618
 
 namespace InfinitePassages;
 
