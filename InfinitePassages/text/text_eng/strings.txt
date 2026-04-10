@@ -1,4 +1,4 @@
 SkipPassageAnimation|Skip Passage Animation
-NoKarmaRecovery|No Karma Recovery
+NoKarmaRecovery|No Karma Regain On Fast Travel
 
 (One time use) Fast travel to any discovered shelter, recovering all karma|Fast travel to any discovered shelter, recovering all karma
