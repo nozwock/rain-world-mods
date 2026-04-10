@@ -225,55 +225,41 @@ public partial class Plugin : BaseUnityPlugin
     {
         var cursor = new ILCursor(il);
 
-        try
-        {
-            var name = nameof(ProcessManager.ProcessID.CustomEndGameScreen);
-            cursor.GotoNext(MoveType.Before,
-                i => i.MatchLdsfld<ProcessManager.ProcessID>(name)
-                    || i.MatchLdfld<ProcessManager.ProcessID>(name),
-                i => i.MatchCallOrCallvirt<ProcessManager>(nameof(ProcessManager.RequestMainProcessSwitch)));
+        var name = nameof(ProcessManager.ProcessID.CustomEndGameScreen);
+        cursor.GotoNext(MoveType.Before,
+            i => i.MatchLdsfld<ProcessManager.ProcessID>(name)
+                || i.MatchLdfld<ProcessManager.ProcessID>(name),
+            i => i.MatchCallOrCallvirt<ProcessManager>(nameof(ProcessManager.RequestMainProcessSwitch)));
 
-            var field = typeof(ProcessManager.ProcessID)
-                .GetField(nameof(ProcessManager.ProcessID.FastTravelScreen));
-            cursor.Next.OpCode = OpCodes.Ldsfld;
-            cursor.Next.Operand = il.Import(field);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex);
-        }
+        var field = typeof(ProcessManager.ProcessID)
+            .GetField(nameof(ProcessManager.ProcessID.FastTravelScreen));
+        cursor.Next.OpCode = OpCodes.Ldsfld;
+        cursor.Next.Operand = il.Import(field);
     }
 
     void IL_SaveState_ApplyCustomEndGame(ILContext il)
     {
         var cursor = new ILCursor(il);
 
-        try
-        {
-            cursor.GotoNext(
-                MoveType.Before,
-                i => i.MatchLdfld<DeathPersistentSaveData>(nameof(DeathPersistentSaveData.karmaCap)),
-                i => i.MatchStfld<DeathPersistentSaveData>(nameof(DeathPersistentSaveData.karma))
-            );
-            cursor.Next.Operand = typeof(DeathPersistentSaveData)
-                .GetField(nameof(DeathPersistentSaveData.karma));
+        cursor.GotoNext(
+            MoveType.Before,
+            i => i.MatchLdfld<DeathPersistentSaveData>(nameof(DeathPersistentSaveData.karmaCap)),
+            i => i.MatchStfld<DeathPersistentSaveData>(nameof(DeathPersistentSaveData.karma))
+        );
+        cursor.Next.Operand = typeof(DeathPersistentSaveData)
+            .GetField(nameof(DeathPersistentSaveData.karma));
 
-            // There's WorldCoordinate? karmaFlowerPosition as well that is getting nulled, but it's probably best to
-            // let the flower be reset assuming the player is moving far away from the region the flower is in
+        // There's WorldCoordinate? karmaFlowerPosition as well that is getting nulled, but it's probably best to
+        // let the flower be reset assuming the player is moving far away from the region the flower is in
 
-            // cursor.Index = 0;
-            // cursor.GotoNext(
-            //     MoveType.Before,
-            //     i => i.MatchLdarg(0),
-            //     i => i.MatchLdfld<SaveState>(nameof(SaveState.deathPersistentSaveData)),
-            //     i => i.MatchLdflda<DeathPersistentSaveData>(nameof(DeathPersistentSaveData.karmaFlowerPosition)),
-            //     i => i.MatchInitobj<WorldCoordinate?>()
-            // );
-            // cursor.RemoveRange(4);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex);
-        }
+        // cursor.Index = 0;
+        // cursor.GotoNext(
+        //     MoveType.Before,
+        //     i => i.MatchLdarg(0),
+        //     i => i.MatchLdfld<SaveState>(nameof(SaveState.deathPersistentSaveData)),
+        //     i => i.MatchLdflda<DeathPersistentSaveData>(nameof(DeathPersistentSaveData.karmaFlowerPosition)),
+        //     i => i.MatchInitobj<WorldCoordinate?>()
+        // );
+        // cursor.RemoveRange(4);
     }
 }
