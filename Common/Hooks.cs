@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -11,9 +12,40 @@ namespace Common.Hooks;
 public static class Utils
 {
     static readonly Assembly executingAssembly = Assembly.GetExecutingAssembly();
+    static readonly FieldInfo fieldOwnedHookLists = typeof(MonoMod.RuntimeDetour.HookGen.HookEndpointManager)
+        .GetField("OwnedHookLists", BindingFlags.NonPublic | BindingFlags.Static);
 
     public static void HookGenUnpatchSelf()
         => MonoMod.RuntimeDetour.HookGen.HookEndpointManager.RemoveAllOwnedBy(executingAssembly);
+
+    /// <returns>
+    /// Item1 (HookType) can be 0 (Hook), or 1 (ILHook).
+    /// </returns>
+    public static IEnumerable<(int, MethodBase, Delegate)>? GetHookGenPatchedMethods()
+    {
+        var dict = (IDictionary)fieldOwnedHookLists.GetValue(null);
+        if (!dict.Contains(executingAssembly))
+            return null;
+
+        var hookEntries = (IEnumerable<object>)dict[executingAssembly];
+        var first = hookEntries.FirstOrDefault();
+        if (first is null)
+            return null;
+
+        var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+        var t = first.GetType();
+
+        var typeField = t.GetField("Type", flags);
+        var methodField = t.GetField("Method", flags);
+        var hookField = t.GetField("Hook", flags);
+
+        return hookEntries.Select(hookEntry =>
+        (
+            (int)typeField.GetValue(hookEntry),
+            (MethodBase)methodField.GetValue(hookEntry),
+            (Delegate)hookField.GetValue(hookEntry)
+        ));
+    }
 }
 
 public class ManagedHooks(ManualLogSource logger) : IDisposable
