@@ -104,20 +104,20 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
             detourLists[manipulator] = [new ILHook(method, manipulator)];
     }
 
-    public IEnumerable<(HookType, MethodBase, MethodBase, bool)> GetAllPatchedMethods()
-        => GetAllHookedMethods()
+    public IEnumerable<(HookType, MethodBase, MethodBase, bool)> GetPatchedMethods()
+        => GetHookedMethods()
             .Select(it => (HookType.Hook, it.Item1, it.Item2, it.Item3))
             .Concat(
-                GetAllModifiedMethods()
+                GetModifiedMethods()
                 .Select(it => (HookType.ILHook, it.Item1, it.Item2, it.Item3)));
 
-    public IEnumerable<(MethodBase, MethodBase, bool)> GetAllHookedMethods()
+    public IEnumerable<(MethodBase, MethodBase, bool)> GetHookedMethods()
         => detourLists.Values
             .SelectMany(it => it)
             .OfType<Hook>()
             .Select(hook => (hook.Method, hook.Target, hook.IsApplied));
 
-    public IEnumerable<(MethodBase, MethodBase, bool)> GetAllModifiedMethods()
+    public IEnumerable<(MethodBase, MethodBase, bool)> GetModifiedMethods()
         => detourLists
             .SelectMany(
                 kvp => kvp.Value.OfType<ILHook>(),
@@ -167,7 +167,7 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
         if (!BepInEx.Logging.LogLevel.HasFlag(LogLevel.Debug))
             return;
 
-        foreach (var (kind, method, target, _) in GetAllPatchedMethods().Where(it => it.Item4))
+        foreach (var (kind, method, target, _) in GetPatchedMethods().Where(it => it.Item4))
         {
             var msg = GetMsg(kind, method, target);
             logger.LogDebug(msg);
