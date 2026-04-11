@@ -10,21 +10,16 @@ public static class Logging
     static readonly FieldInfo fieldConfigConsoleDisplayedLevel = typeof(ConsoleLogListener)
         .GetField("ConfigConsoleDisplayedLevel", BindingFlags.NonPublic | BindingFlags.Static);
 
-    static ConfigEntry<LogLevel> ConfigConsoleDisplayedLevel
-        => (ConfigEntry<LogLevel>)fieldConfigConsoleDisplayedLevel.GetValue(null);
-
     // BepInEx 5.4.17
     // Why're you like this bepinex...
     /// <summary>
     /// Returns current BepInEx LogLevel based on config.
     /// </summary>
-    public static LogLevel LogLevel
-    {
-        get
-        {
-            var diskLogListener = Logger.Listeners.OfType<DiskLogListener>().FirstOrDefault();
-            return (diskLogListener?.DisplayedLogLevel ?? LogLevel.None)
-                | ConfigConsoleDisplayedLevel.Value;
-        }
-    }
+    public static LogLevel LogLevel => DiskLogLevel | ConsoleLogLevel;
+
+    public static LogLevel DiskLogLevel
+        => Logger.Listeners.OfType<DiskLogListener>().FirstOrDefault()?.DisplayedLogLevel ?? LogLevel.None;
+
+    public static LogLevel ConsoleLogLevel
+        => ((ConfigEntry<LogLevel>)fieldConfigConsoleDisplayedLevel.GetValue(null)).Value;
 }
