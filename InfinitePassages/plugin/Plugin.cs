@@ -13,10 +13,15 @@ public partial class Plugin : BaseUnityPlugin
 {
     bool isInit;
 
-    ManagedHooks? managedHooks;
+    ManagedHooks managedHooks;
 
     Configurable<bool>? configSkipPassageAnimation;
     Configurable<bool>? configNoKarmaRecovery;
+
+    public Plugin()
+    {
+        managedHooks = new(Logger);
+    }
 
     public void OnEnable() => On.RainWorld.OnModsInit += Hook_RainWorld_OnModsInit;
 
@@ -65,8 +70,6 @@ public partial class Plugin : BaseUnityPlugin
 
     void InitHooks()
     {
-        managedHooks = new(Logger);
-
         On.RainWorldGame.CustomEndGameSaveAndRestart += Hook_RainWorldGame_CustomEndGameSaveAndRestart;
         On.Menu.EndgameTokens.ctor += Hook_EndgameTokens_ctor;
         On.WinState.ConsumeEndGame += Hook_WinState_ConsumeEndGame;
@@ -95,7 +98,7 @@ public partial class Plugin : BaseUnityPlugin
         try
         {
             HookGen.UnpatchSelf();
-            managedHooks?.Dispose();
+            managedHooks.Dispose();
 
             configSkipPassageAnimation?.OnChange -= InitHooks_SkipPassageAnimation;
             configNoKarmaRecovery?.OnChange -= InitHooks_NoKarmaRecovery;
