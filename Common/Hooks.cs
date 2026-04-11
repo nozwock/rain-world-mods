@@ -24,9 +24,6 @@ public static class HookGen
     public static void UnpatchSelf()
         => MonoMod.RuntimeDetour.HookGen.HookEndpointManager.RemoveAllOwnedBy(executingAssembly);
 
-    /// <returns>
-    /// Item1 (HookType) can be 0 (Hook), or 1 (ILHook).
-    /// </returns>
     public static IEnumerable<(HookType, MethodBase, Delegate)> GetPatchedMethods()
     {
         var dict = (IDictionary)fieldOwnedHookLists.GetValue(null);
@@ -66,6 +63,9 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
         detourLists.Clear();
     }
 
+    /// <summary>
+    /// Create a `RuntimeDetour.Hook`.
+    /// </summary>
     public void Add(MethodBase method, Delegate to)
     {
         if (detourLists.TryGetValue(to, out var detours))
@@ -83,6 +83,9 @@ public class ManagedHooks(ManualLogSource logger) : IDisposable
             detourLists[to] = [new Hook(method, to)];
     }
 
+    /// <summary>
+    /// Create a `RuntimeDetour.ILHook`.
+    /// </summary>
     public void Add(MethodBase method, ILContext.Manipulator manipulator)
     {
         if (detourLists.TryGetValue(manipulator, out var detours))
