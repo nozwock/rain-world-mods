@@ -164,6 +164,9 @@ static class SaveGame
 
         internal void ApplyReaders(IReadOnlyList<string> unrecongnizedSaveStrings)
         {
+            if (_readers.Count == 0)
+                return;
+
             // Transform (reader -> (key -> flag)) to (key -> (reader -> flag))
             var keyReaders = _readers
                 .SelectMany(kvp =>
@@ -234,6 +237,9 @@ static class SaveGame
 
         internal void ApplyWriters(List<string> unrecongnizedSaveStrings)
         {
+            if (_writers.Count == 0)
+                return;
+
             // FIXME: Update instead of remove all first since a writer may fail leaving with no data
 
             // Remove key-value that are to be updated
