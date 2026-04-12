@@ -352,7 +352,7 @@ static class SaveGame
 
     static bool isInit = false;
 
-    static readonly string logPrefix = $"{typeof(SaveGame).Namespace}.{nameof(SaveGame)}:";
+    static readonly string logPrefix = $"{typeof(SaveGame).FullName}:";
 
     /// <summary>
     /// Regular save data, whatever that means.
