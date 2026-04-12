@@ -178,7 +178,8 @@ static class SaveGame
     public static Progression DeathPersistentData { get; private set; } = new();
 
     /// <summary>
-    /// This SaveData is read only once on game start and written on each cycle and game exit.
+    /// Savefile-specific data that gets retained across savefiles. <br/>
+    /// It is read once from savefile per game boot, but written to savefile in the same manner as DeathPersistentData.
     /// </summary>
     public static Progression ProgressionData { get; private set; } = new();
 
@@ -191,8 +192,8 @@ static class SaveGame
         On.DeathPersistentSaveData.FromString += Hook_DeathPersistentSaveData_FromString;
         On.DeathPersistentSaveData.SaveToString += Hook_DeathPersistentSaveData_SaveToString;
 
-        On.PlayerProgression.MiscProgressionData.ToString += Hook_MiscProgressionData_ToString;
         On.PlayerProgression.MiscProgressionData.FromString += Hook_MiscProgressionData_FromString;
+        On.PlayerProgression.MiscProgressionData.ToString += Hook_MiscProgressionData_ToString;
     }
 
     public static void Reset()
