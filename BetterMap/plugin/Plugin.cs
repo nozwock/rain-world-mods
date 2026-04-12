@@ -92,9 +92,9 @@ public partial class Plugin : BaseUnityPlugin
                     UnityEngine.Random.Range(start.x, end.x),
                     UnityEngine.Random.Range(start.y, end.y)))
             {
-                for (var x = start.x; x < end.x; x++)
+                for (var x = start.x; x <= end.x; x++)
                 {
-                    for (var y = start.y; y < end.y; y++)
+                    for (var y = start.y; y <= end.y; y++)
                     {
                         self.discoverTexture.SetPixel(x, y, new(1f, 1f, 1f));
                     }
