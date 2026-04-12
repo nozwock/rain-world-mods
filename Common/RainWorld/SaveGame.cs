@@ -167,16 +167,7 @@ static class SaveGame
             if (_readers.Count == 0)
                 return;
 
-            // Transform (reader -> (key -> flag)) to (key -> (reader -> flag))
-            var keyReaders = _readers
-                .SelectMany(kvp =>
-                    kvp.Value.Select(kvp2 =>
-                        (str: kvp2.Key, t: (reader: kvp.Key, preprocess: kvp2.Value))))
-                .GroupBy(t => t.str, t => t.t)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.ToDictionary(it => it.reader, it => it.preprocess));
-
+            var keyReaders = TransposeDelegates(_readers);
             foreach (var saveString in unrecongnizedSaveStrings)
             {
                 var splits = Regex.Split(saveString, FieldDelimiter);
@@ -291,6 +282,17 @@ static class SaveGame
                 }
             }
         }
+
+        static Dictionary<string, Dictionary<TDelegate, bool>> TransposeDelegates<TDelegate>(
+            Dictionary<TDelegate, Dictionary<string, bool>> map)
+            => map
+                .SelectMany(kvp =>
+                    kvp.Value.Select(kvp2 =>
+                        (str: kvp2.Key, t: (callback: kvp.Key, preprocess: kvp2.Value))))
+                .GroupBy(t => t.str, t => t.t)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.ToDictionary(it => it.callback, it => it.preprocess));
     }
 
     public class DeathPersistent : SaveGameBase
