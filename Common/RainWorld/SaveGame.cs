@@ -280,7 +280,7 @@ static class SaveGame
         On.PlayerProgression.MiscProgressionData.ToString -= Hook_MiscProgressionData_ToString;
     }
 
-    private static void Hook_DeathPersistentSaveData_FromString(
+    static void Hook_DeathPersistentSaveData_FromString(
         On.DeathPersistentSaveData.orig_FromString orig,
         DeathPersistentSaveData self,
         string s)
@@ -289,7 +289,7 @@ static class SaveGame
         DeathPersistentData.ApplyReaders(self.unrecognizedSaveStrings);
     }
 
-    private static string Hook_DeathPersistentSaveData_SaveToString(
+    static string Hook_DeathPersistentSaveData_SaveToString(
         On.DeathPersistentSaveData.orig_SaveToString orig,
         DeathPersistentSaveData self,
         bool saveAsIfPlayerDied,
