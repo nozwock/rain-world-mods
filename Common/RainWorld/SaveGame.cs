@@ -120,8 +120,22 @@ static class SaveGame
 
         public void RegisterRead(string key, Action<string> reader, bool preprocess = true)
             => RegisterDelegate(_readers, key, reader, preprocess);
+
+        /// <exception cref="ArgumentException"></exception>
         public void RegisterWrite(string key, Func<string> writer, bool preprocess = true)
-            => RegisterDelegate(_writers, key, writer, preprocess);
+        {
+            if (_writers.SelectMany(kvp => kvp.Value.Select(kvp2 => kvp2.Key)).Contains(key))
+            {
+                // Since there's no order for registered writers, we can't even have the logic of letting the last
+                // writer take precedence.
+                // Support for this could be added later if desired by maintaining a separate (key -> writer[]) just for
+                // ordering's sake.
+                throw new ArgumentException(
+                    $"Multiple writers for the same key aren't allowed: {nameof(key)}={key}");
+            }
+
+            RegisterDelegate(_writers, key, writer, preprocess);
+        }
 
         public void UnregisterRead(Action<string> reader) => _readers.Remove(reader);
         public void UnregisterWrite(Func<string> writer) => _writers.Remove(writer);
