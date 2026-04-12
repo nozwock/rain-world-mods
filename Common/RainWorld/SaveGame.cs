@@ -22,7 +22,11 @@ static class SaveGame
         public abstract string FieldDelimiter { get; }
         public abstract List<string>? UnrecognizedSaveStrings { get; }
 
-        static string GetMethodFullName(MethodInfo method) => $"{method.DeclaringType.Name}.{method.Name}";
+        static string GetMethodFullName(MethodInfo method)
+        {
+            var type = method.DeclaringType;
+            return $"{type.Assembly.GetName().Name}::{type.FullName}.{method.Name}";
+        }
 
         /// <summary>
         /// Only works once game has started, i.e. `Singleton.Game` is not null
