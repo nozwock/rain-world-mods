@@ -81,7 +81,7 @@ static class SaveGame
         }
 
         // TODO: Handle escaping to string data by base64 encoding it
-        public void ApplyReaders(IReadOnlyList<string> unrecongnizedSaveStrings)
+        internal void ApplyReaders(IReadOnlyList<string> unrecongnizedSaveStrings)
         {
             var keyReaders = _readers
                 .SelectMany(kvp => kvp.Value.Select(str => (str, reader: kvp.Key)))
@@ -113,7 +113,7 @@ static class SaveGame
             }
         }
 
-        public void ApplyWriters(List<string> unrecongnizedSaveStrings)
+        internal void ApplyWriters(List<string> unrecongnizedSaveStrings)
         {
             // Remove key-value that are to be updated
             var writerKeys = _writers
