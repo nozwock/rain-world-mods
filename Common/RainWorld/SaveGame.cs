@@ -154,6 +154,12 @@ static class SaveGame
         }
     }
 
+    public class DeathPersistent : SaveGameBase
+    {
+        public override string ParentDelimiter => "<dpA>";
+        public override string FieldDelimiter => "<dpB>";
+    }
+
     public class Progression : SaveGameBase
     {
         public override string ParentDelimiter => "<mpdA>";
@@ -163,6 +169,13 @@ static class SaveGame
     static bool isInit = false;
 
     static readonly string logPrefix = $"{typeof(SaveGame).Namespace}.{nameof(SaveGame)}:";
+
+    /// <summary>
+    /// Campaign-specific save data that is written to the savefile upon ending the cycle in any way or quitting to the
+    /// menu. <br/>
+    /// It is read from savefile on every game load.
+    /// </summary>
+    public static Progression DeathPersistentData { get; private set; } = new();
 
     /// <summary>
     /// This SaveData is read only once on game start and written on each cycle and game exit.
@@ -175,6 +188,9 @@ static class SaveGame
             return;
         isInit = true;
 
+        On.DeathPersistentSaveData.FromString += Hook_DeathPersistentSaveData_FromString;
+        On.DeathPersistentSaveData.SaveToString += Hook_DeathPersistentSaveData_SaveToString;
+
         On.PlayerProgression.MiscProgressionData.ToString += Hook_MiscProgressionData_ToString;
         On.PlayerProgression.MiscProgressionData.FromString += Hook_MiscProgressionData_FromString;
     }
@@ -185,9 +201,32 @@ static class SaveGame
             return;
         isInit = false;
 
+        DeathPersistentData = new();
+        On.DeathPersistentSaveData.FromString += Hook_DeathPersistentSaveData_FromString;
+        On.DeathPersistentSaveData.SaveToString += Hook_DeathPersistentSaveData_SaveToString;
+
         ProgressionData = new();
         On.PlayerProgression.MiscProgressionData.FromString -= Hook_MiscProgressionData_FromString;
         On.PlayerProgression.MiscProgressionData.ToString -= Hook_MiscProgressionData_ToString;
+    }
+
+    private static void Hook_DeathPersistentSaveData_FromString(
+        On.DeathPersistentSaveData.orig_FromString orig,
+        DeathPersistentSaveData self,
+        string s)
+    {
+        orig(self, s);
+        DeathPersistentData.ApplyReaders(self.unrecognizedSaveStrings);
+    }
+
+    private static string Hook_DeathPersistentSaveData_SaveToString(
+        On.DeathPersistentSaveData.orig_SaveToString orig,
+        DeathPersistentSaveData self,
+        bool saveAsIfPlayerDied,
+        bool saveAsIfPlayerQuit)
+    {
+        DeathPersistentData.ApplyWriters(self.unrecognizedSaveStrings);
+        return orig(self, saveAsIfPlayerDied, saveAsIfPlayerQuit);
     }
 
     static void Hook_MiscProgressionData_FromString(
