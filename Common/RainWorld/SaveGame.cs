@@ -118,68 +118,47 @@ static class SaveGame
             return removeCount > 0;
         }
 
-        // TODO: Have common internal impl for Register* (and maybe Unregister*) to dispatch to
         public void RegisterRead(string key, Action<string> reader, bool preprocess = true)
-        {
-            if (_readers.TryGetValue(reader, out var keys))
-            {
-                if (keys.ContainsKey(key))
-                    return;
-                _readers[reader].Add(key, preprocess);
-            }
-            else
-            {
-                _readers[reader] = new()
-                {
-                    {key, preprocess},
-                };
-            }
-        }
-
+            => RegisterDelegate(_readers, key, reader, preprocess);
         public void RegisterWrite(string key, Func<string> writer, bool preprocess = true)
+            => RegisterDelegate(_writers, key, writer, preprocess);
+
+        public void UnregisterRead(Action<string> reader) => _readers.Remove(reader);
+        public void UnregisterWrite(Func<string> writer) => _writers.Remove(writer);
+        public void UnregisterRead(string key, Action<string> reader) => UnregisterDelegate(_readers, key, reader);
+        public void UnregisterWrite(string key, Func<string> writer) => UnregisterDelegate(_writers, key, writer);
+
+        void RegisterDelegate<TDelegate>(
+            Dictionary<TDelegate, Dictionary<string, bool>> map,
+            string key,
+            TDelegate callback,
+            bool preprocess)
         {
-            if (_writers.TryGetValue(writer, out var keys))
+            if (map.TryGetValue(callback, out var keys))
             {
                 if (keys.ContainsKey(key))
                     return;
-                _writers[writer].Add(key, preprocess);
+                map[callback].Add(key, preprocess);
             }
             else
             {
-                _writers[writer] = new()
+                map[callback] = new()
                 {
                     {key, preprocess},
                 };
             }
         }
 
-        public void UnregisterRead(Action<string> reader)
+        public void UnregisterDelegate<TDelegate>(
+            Dictionary<TDelegate, Dictionary<string, bool>> map,
+            string key,
+            TDelegate callback)
         {
-            _readers.Remove(reader);
-        }
-
-        public void UnregisterWrite(Func<string> writer)
-        {
-            _writers.Remove(writer);
-        }
-
-        public void UnregisterRead(string key, Action<string> reader)
-        {
-            if (_readers.TryGetValue(reader, out var keys))
+            if (map.TryGetValue(callback, out var keys))
             {
                 keys.Remove(key);
                 if (keys.Count == 0)
-                    _readers.Remove(reader);
-            }
-        }
-
-        public void UnregisterWrite(string key, Func<string> writer)
-        {
-            if (_writers.TryGetValue(writer, out var keys))
-            {
-                keys.Remove(key);
-                if (keys.Count == 0)
-                    _writers.Remove(writer);
+                    map.Remove(callback);
             }
         }
 
