@@ -321,6 +321,15 @@ static class SaveGame
                     g => g.ToDictionary(it => it.callback, it => it.preprocess));
     }
 
+    public class SaveState : SaveGameBase
+    {
+        public override string ParentDelimiter => "<svA>";
+        public override string FieldDelimiter => "<svB>";
+
+        public override List<string>? UnrecognizedSaveStrings
+            => Singleton.Game?.GetStorySession?.saveState?.unrecognizedSaveStrings;
+    }
+
     public class DeathPersistent : SaveGameBase
     {
         public override string ParentDelimiter => "<dpA>";
@@ -346,6 +355,11 @@ static class SaveGame
     static readonly string logPrefix = $"{typeof(SaveGame).Namespace}.{nameof(SaveGame)}:";
 
     /// <summary>
+    /// Regular save data, whatever that means.
+    /// </summary>
+    public static SaveState SaveStateData { get; private set; } = new();
+
+    /// <summary>
     /// Campaign-specific save data that is written to the savefile upon ending the cycle in any way or quitting to the
     /// menu. <br/>
     /// It is read from savefile on every game load.
@@ -366,6 +380,9 @@ static class SaveGame
 
         Singleton.Init();
 
+        On.SaveState.LoadGame += Hook_SaveState_LoadGame;
+        On.SaveState.SaveToString += Hook_SaveState_SaveToString;
+
         On.DeathPersistentSaveData.FromString += Hook_DeathPersistentSaveData_FromString;
         On.DeathPersistentSaveData.SaveToString += Hook_DeathPersistentSaveData_SaveToString;
 
@@ -381,6 +398,10 @@ static class SaveGame
 
         Singleton.Reset();
 
+        SaveStateData = new();
+        On.SaveState.LoadGame -= Hook_SaveState_LoadGame;
+        On.SaveState.SaveToString -= Hook_SaveState_SaveToString;
+
         DeathPersistentData = new();
         On.DeathPersistentSaveData.FromString -= Hook_DeathPersistentSaveData_FromString;
         On.DeathPersistentSaveData.SaveToString -= Hook_DeathPersistentSaveData_SaveToString;
@@ -388,6 +409,24 @@ static class SaveGame
         ProgressionData = new();
         On.PlayerProgression.MiscProgressionData.FromString -= Hook_MiscProgressionData_FromString;
         On.PlayerProgression.MiscProgressionData.ToString -= Hook_MiscProgressionData_ToString;
+    }
+
+    static void Hook_SaveState_LoadGame(
+        On.SaveState.orig_LoadGame orig,
+        global::SaveState self,
+        string str,
+        RainWorldGame game)
+    {
+        orig(self, str, game);
+        SaveStateData.ApplyReaders(self.unrecognizedSaveStrings);
+    }
+
+    static string Hook_SaveState_SaveToString(
+        On.SaveState.orig_SaveToString orig,
+        global::SaveState self)
+    {
+        SaveStateData.ApplyWriters(self.unrecognizedSaveStrings);
+        return orig(self);
     }
 
     static void Hook_DeathPersistentSaveData_FromString(
