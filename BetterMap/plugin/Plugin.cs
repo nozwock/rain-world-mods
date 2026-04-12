@@ -8,8 +8,9 @@ namespace BetterMap;
 [BepInAutoPlugin(id: "nozwock.BetterMap")]
 public partial class Plugin : BaseUnityPlugin
 {
-    bool isInit;
+    static readonly UnityEngine.Color discoveredTextureColor = new(1f, 1f, 1f);
 
+    bool isInit;
     ManagedHooks managedHooks;
 
     public Plugin()
@@ -63,50 +64,59 @@ public partial class Plugin : BaseUnityPlugin
 
     void InitHooks()
     {
-        On.HUD.Map.DiscoverMap += Hook_Map_DiscoverMap;
+        On.RoomCamera.MoveCamera_int += Hook_RoomCamera_MoveCamera_int;
+        On.RoomCamera.MoveCamera_Room_int += Hook_RoomCamera_MoveCamera_Room_int;
 
         managedHooks.LogPatchedMethods(includeHookGen: true);
     }
 
-    // TODO: Do the uncovering of rooms (or parts of the rooms) in MoveCamera instead of DiscoverMap (Map.Update)
-    // On.RoomCamera.MoveCamera_int
-    // On.RoomCamera.MoveCamera_Room_int
-
-    void Hook_Map_DiscoverMap(On.HUD.Map.orig_DiscoverMap orig, HUD.Map self, IntVector2 texturePos)
+    void Hook_RoomCamera_MoveCamera_int(
+        On.RoomCamera.orig_MoveCamera_int orig,
+        RoomCamera self,
+        int camPos)
     {
-        // There's room.aidataprepro.aiMap.getAITile(x, y).visibility from AIdataPreprocessor.VisibilityMapper that was
-        // tried before GetVisibleRect was found but it seems to be vision cone for the creature AI
+        orig(self, camPos);
+        UncoverVisibleRoomArea(self);
+    }
 
-        if (self.hud.owner is Player player
-            && player.room != null)
+    void Hook_RoomCamera_MoveCamera_Room_int(
+        On.RoomCamera.orig_MoveCamera_Room_int orig,
+        RoomCamera self,
+        Room newRoom,
+        int camPos)
+    {
+        orig(self, newRoom, camPos);
+        UncoverVisibleRoomArea(self);
+    }
+
+    void UncoverVisibleRoomArea(RoomCamera camera)
+    {
+        var map = camera.hud?.map;
+        if (map is null)
+            return;
+
+        if (map.mapLoaded
+            && map.discLoaded
+            && map.hud.owner is Player player
+            && player.abstractCreature.Room?.realizedRoom is { } room)
         {
-            var (start, end) = GetVisibleRoomArea(self, player.room, 0);
+            var (start, end) = GetVisibleRoomArea(map, room, 0);
 
-            if (IsNotDiscovered(self, start.x, start.y)
-                || IsNotDiscovered(self, start.x, end.y)
-                || IsNotDiscovered(self, end.x, end.y)
-                || IsNotDiscovered(self, end.x, start.y)
-                // XXX Would need some flag to mark section as discovered if not running in Map.Update
-                || IsNotDiscovered(
-                    self,
-                    UnityEngine.Random.Range(start.x, end.x),
-                    UnityEngine.Random.Range(start.y, end.y)))
+            // TODO: Use (room.abstractRoom.FileName, camPos) to track whether the area was already uncovered or not
+            for (var x = start.x; x <= end.x; x++)
             {
-                for (var x = start.x; x <= end.x; x++)
+                for (var y = start.y; y <= end.y; y++)
                 {
-                    for (var y = start.y; y <= end.y; y++)
-                    {
-                        self.discoverTexture.SetPixel(x, y, new(1f, 1f, 1f));
-                    }
+                    map.discoverTexture.SetPixel(x, y, discoveredTextureColor);
                 }
             }
         }
-
-        orig(self, texturePos);
     }
 
     static (IntVector2, IntVector2) GetVisibleRoomArea(HUD.Map map, Room room, int margin)
     {
+        // There's room.aidataprepro.aiMap.getAITile(x, y).visibility from AIdataPreprocessor.VisibilityMapper that was
+        // tried before GetVisibleRect was found but it seems to be vision cone for the creature AI
         var rect = room.game.cameras[0].GetVisibleRect(margin, widescreen: false);
         var start = IntVector2.FromVector2(
             map.OnTexturePos(
