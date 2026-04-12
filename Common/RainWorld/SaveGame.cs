@@ -186,8 +186,8 @@ static class SaveGame
         isInit = false;
 
         ProgressionData = new();
-        On.PlayerProgression.MiscProgressionData.ToString -= Hook_MiscProgressionData_ToString;
         On.PlayerProgression.MiscProgressionData.FromString -= Hook_MiscProgressionData_FromString;
+        On.PlayerProgression.MiscProgressionData.ToString -= Hook_MiscProgressionData_ToString;
     }
 
     static void Hook_MiscProgressionData_FromString(
@@ -196,9 +196,6 @@ static class SaveGame
         string s)
     {
         orig(self, s);
-        Debug.Log(
-            $"{logPrefix} Reading MiscProgressionData: unrecognizedSaveStrings="
-            + self.unrecognizedSaveStrings.Count);
         ProgressionData.ApplyReaders(self.unrecognizedSaveStrings);
     }
 
