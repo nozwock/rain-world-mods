@@ -342,8 +342,8 @@ static class SaveGame
         isInit = false;
 
         DeathPersistentData = new();
-        On.DeathPersistentSaveData.FromString += Hook_DeathPersistentSaveData_FromString;
-        On.DeathPersistentSaveData.SaveToString += Hook_DeathPersistentSaveData_SaveToString;
+        On.DeathPersistentSaveData.FromString -= Hook_DeathPersistentSaveData_FromString;
+        On.DeathPersistentSaveData.SaveToString -= Hook_DeathPersistentSaveData_SaveToString;
 
         ProgressionData = new();
         On.PlayerProgression.MiscProgressionData.FromString -= Hook_MiscProgressionData_FromString;
