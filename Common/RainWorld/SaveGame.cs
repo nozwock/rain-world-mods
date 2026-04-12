@@ -330,6 +330,16 @@ static class SaveGame
             => Singleton.Game?.GetStorySession?.saveState?.unrecognizedSaveStrings;
     }
 
+    public class MiscWorld : SaveGameBase
+    {
+        public override string ParentDelimiter => "<mwA>";
+        public override string FieldDelimiter => "<mwB>";
+
+        public override List<string>? UnrecognizedSaveStrings
+            => Singleton.Game?.GetStorySession?
+                .saveState?.miscWorldSaveData?.unrecognizedSaveStrings;
+    }
+
     public class DeathPersistent : SaveGameBase
     {
         public override string ParentDelimiter => "<dpA>";
@@ -360,6 +370,13 @@ static class SaveGame
     public static SaveState SaveStateData { get; private set; } = new();
 
     /// <summary>
+    /// Campaign-specific save data that requires a non-starvation hibernation in order to be written to the savefile.
+    /// In case of a starvation hibernation, it is temporarily written to the memory and is used to initialise the next
+    /// cycle.
+    /// </summary>
+    public static MiscWorld MiscWorldData { get; private set; } = new();
+
+    /// <summary>
     /// Campaign-specific save data that is written to the savefile upon ending the cycle in any way or quitting to the
     /// menu. <br/>
     /// It is read from savefile on every game load.
@@ -383,6 +400,9 @@ static class SaveGame
         On.SaveState.LoadGame += Hook_SaveState_LoadGame;
         On.SaveState.SaveToString += Hook_SaveState_SaveToString;
 
+        On.MiscWorldSaveData.FromString += Hook_MiscWorldSaveData_FromString;
+        On.MiscWorldSaveData.ToString += Hook_MiscWorldSaveData_ToString;
+
         On.DeathPersistentSaveData.FromString += Hook_DeathPersistentSaveData_FromString;
         On.DeathPersistentSaveData.SaveToString += Hook_DeathPersistentSaveData_SaveToString;
 
@@ -401,6 +421,10 @@ static class SaveGame
         SaveStateData = new();
         On.SaveState.LoadGame -= Hook_SaveState_LoadGame;
         On.SaveState.SaveToString -= Hook_SaveState_SaveToString;
+
+        MiscWorldData = new();
+        On.MiscWorldSaveData.FromString -= Hook_MiscWorldSaveData_FromString;
+        On.MiscWorldSaveData.ToString -= Hook_MiscWorldSaveData_ToString;
 
         DeathPersistentData = new();
         On.DeathPersistentSaveData.FromString -= Hook_DeathPersistentSaveData_FromString;
@@ -426,6 +450,23 @@ static class SaveGame
         global::SaveState self)
     {
         SaveStateData.ApplyWriters(self.unrecognizedSaveStrings);
+        return orig(self);
+    }
+
+    static void Hook_MiscWorldSaveData_FromString(
+        On.MiscWorldSaveData.orig_FromString orig,
+        MiscWorldSaveData self,
+        string s)
+    {
+        orig(self, s);
+        MiscWorldData.ApplyReaders(self.unrecognizedSaveStrings);
+    }
+
+    static string Hook_MiscWorldSaveData_ToString(
+        On.MiscWorldSaveData.orig_ToString orig,
+        MiscWorldSaveData self)
+    {
+        MiscWorldData.ApplyWriters(self.unrecognizedSaveStrings);
         return orig(self);
     }
 
