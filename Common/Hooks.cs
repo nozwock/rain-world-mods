@@ -15,7 +15,7 @@ public enum HookType
     ILHook,
 }
 
-public static class HookGen
+static class HookGen
 {
     static readonly Assembly executingAssembly = Assembly.GetExecutingAssembly();
     static readonly FieldInfo fieldOwnedHookLists = typeof(MonoMod.RuntimeDetour.HookGen.HookEndpointManager)

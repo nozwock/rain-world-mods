@@ -45,7 +45,7 @@ static class Singleton
 
     // It works because RainWorldGame will not have being constructed by the time we setup hooks
     // https://discord.com/channels/291184728944410624/1094741201623720058/1405336874024833044
-    private static void Hook_RainWorldGame_ctor(
+    static void Hook_RainWorldGame_ctor(
         On.RainWorldGame.orig_ctor orig,
         RainWorldGame self,
         ProcessManager manager)
