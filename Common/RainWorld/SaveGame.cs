@@ -239,7 +239,8 @@ static class SaveGame
                         catch (Exception ex)
                         {
                             Debug.LogError(
-                                $"{logPrefix} {GetMethodFullName(reader.Method)}: Failed to read savedata: {ex}");
+                                $"{logPrefix} Delegate threw error while reading save string: "
+                                + $"{GetMethodFullName(reader.Method)}: {ex}");
                         }
                     }
                 }
@@ -275,7 +276,8 @@ static class SaveGame
                 catch (Exception ex)
                 {
                     Debug.LogError(
-                        $"{logPrefix} {GetMethodFullName(writer.Method)}: Failed to write savedata: {ex}");
+                        $"{logPrefix} Delegate threw error while writing save string: "
+                        + $"{GetMethodFullName(writer.Method)}: {ex}");
                 }
 
                 if (writeString is null)
