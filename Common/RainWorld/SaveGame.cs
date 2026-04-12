@@ -18,8 +18,68 @@ static class SaveGame
 
         public abstract string ParentDelimiter { get; }
         public abstract string FieldDelimiter { get; }
+        public abstract List<string>? UnrecognizedSaveStrings { get; }
 
         static string GetMethodFullName(MethodInfo method) => $"{method.DeclaringType.Name}.{method.Name}";
+
+        public string? Read(string key)
+        {
+            var unrecognizedSaveStrings = UnrecognizedSaveStrings;
+            if (unrecognizedSaveStrings is null)
+                return null;
+
+            foreach (var saveString in unrecognizedSaveStrings)
+            {
+                var splits = Regex.Split(saveString, FieldDelimiter);
+                if (splits.Length < 2)
+                    continue;
+
+                var sKey = splits[0];
+                if (key == sKey)
+                    return splits[1];
+            }
+
+            return null;
+        }
+
+        public bool Write(string key, string value)
+        {
+            var unrecognizedSaveStrings = UnrecognizedSaveStrings;
+            if (unrecognizedSaveStrings is null)
+                return false;
+
+            Remove(key);
+            unrecognizedSaveStrings.Add($"{key}{FieldDelimiter}{value}");
+
+            return true;
+        }
+
+        public bool Remove(string key, int count = 1)
+        {
+            var unrecognizedSaveStrings = UnrecognizedSaveStrings;
+            if (unrecognizedSaveStrings is null)
+                return false;
+
+            var removals = 0;
+            var removeCount = unrecognizedSaveStrings.RemoveAll(saveString =>
+            {
+                if (count > 0 && removals >= count)
+                    return false;
+
+                var splits = Regex.Split(saveString, FieldDelimiter);
+                if (splits.Length < 1)
+                    return false;
+
+                var sKey = splits[0];
+                var isRemove = key == sKey;
+                if (isRemove)
+                    removals++;
+
+                return isRemove;
+            });
+
+            return removeCount > 0;
+        }
 
         // TODO: Handle escaping to string data by base64 encoding it
         public void ApplyReaders(IReadOnlyList<string> unrecongnizedSaveStrings)
@@ -93,8 +153,6 @@ static class SaveGame
             }
         }
 
-        // TODO: API for queuing removal of key-value in savedata
-
         public void RegisterRead(string key, Action<string> reader)
         {
             if (_readers.TryGetValue(reader, out var keys))
@@ -158,12 +216,20 @@ static class SaveGame
     {
         public override string ParentDelimiter => "<dpA>";
         public override string FieldDelimiter => "<dpB>";
+
+        public override List<string>? UnrecognizedSaveStrings
+            => Singleton.Game?.GetStorySession?
+                .saveState?.deathPersistentSaveData?.unrecognizedSaveStrings;
     }
 
     public class Progression : SaveGameBase
     {
         public override string ParentDelimiter => "<mpdA>";
         public override string FieldDelimiter => "<mpdB>";
+
+        public override List<string>? UnrecognizedSaveStrings
+            => Singleton.Game?.GetStorySession?
+                .saveState?.progression?.miscProgressionData?.unrecognizedSaveStrings;
     }
 
     static bool isInit = false;
@@ -188,6 +254,8 @@ static class SaveGame
         if (isInit)
             return;
         isInit = true;
+
+        Singleton.Init();
 
         On.DeathPersistentSaveData.FromString += Hook_DeathPersistentSaveData_FromString;
         On.DeathPersistentSaveData.SaveToString += Hook_DeathPersistentSaveData_SaveToString;
