@@ -50,6 +50,7 @@ static class Singleton
         RainWorldGame self,
         ProcessManager manager)
     {
+        orig(self, manager);
         Game = self;
     }
 }
