@@ -149,7 +149,7 @@ static class SaveGame
             }
         }
 
-        public void UnregisterDelegate<TDelegate>(
+        void UnregisterDelegate<TDelegate>(
             Dictionary<TDelegate, Dictionary<string, bool>> map,
             string key,
             TDelegate callback)
