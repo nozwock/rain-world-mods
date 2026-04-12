@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -92,6 +91,8 @@ static class SaveGame
             foreach (var saveString in unrecongnizedSaveStrings)
             {
                 var splits = Regex.Split(saveString, FieldDelimiter);
+                if (splits.Length < 2)
+                    continue;
                 var key = splits[0];
                 if (keyReaders.TryGetValue(key, out var readers))
                 {
