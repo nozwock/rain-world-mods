@@ -80,6 +80,64 @@ static class SaveGame
             return removeCount > 0;
         }
 
+        public void RegisterRead(string key, Action<string> reader)
+        {
+            if (_readers.TryGetValue(reader, out var keys))
+            {
+                if (keys.Contains(key))
+                    return;
+                _readers[reader].Add(key);
+            }
+            else
+            {
+                _readers[reader] = [key];
+            }
+        }
+
+        public void RegisterWrite(string key, Func<string> writer)
+        {
+            if (_writers.TryGetValue(writer, out var keys))
+            {
+                if (keys.Contains(key))
+                    return;
+                _writers[writer].Add(key);
+            }
+            else
+            {
+                _writers[writer] = [key];
+            }
+        }
+
+        public void UnregisterRead(Action<string> reader)
+        {
+            _readers.Remove(reader);
+        }
+
+        public void UnregisterWrite(Func<string> writer)
+        {
+            _writers.Remove(writer);
+        }
+
+        public void UnregisterRead(string key, Action<string> reader)
+        {
+            if (_readers.TryGetValue(reader, out var keys))
+            {
+                keys.Remove(key);
+                if (keys.Count == 0)
+                    _readers.Remove(reader);
+            }
+        }
+
+        public void UnregisterWrite(string key, Func<string> writer)
+        {
+            if (_writers.TryGetValue(writer, out var keys))
+            {
+                keys.Remove(key);
+                if (keys.Count == 0)
+                    _writers.Remove(writer);
+            }
+        }
+
         // TODO: Handle escaping to string data by base64 encoding it
         internal void ApplyReaders(IReadOnlyList<string> unrecongnizedSaveStrings)
         {
@@ -151,64 +209,6 @@ static class SaveGame
                     // Game will append these to final string
                     unrecongnizedSaveStrings.Add($"{key}{FieldDelimiter}{writeString}");
                 }
-            }
-        }
-
-        public void RegisterRead(string key, Action<string> reader)
-        {
-            if (_readers.TryGetValue(reader, out var keys))
-            {
-                if (keys.Contains(key))
-                    return;
-                _readers[reader].Add(key);
-            }
-            else
-            {
-                _readers[reader] = [key];
-            }
-        }
-
-        public void RegisterWrite(string key, Func<string> writer)
-        {
-            if (_writers.TryGetValue(writer, out var keys))
-            {
-                if (keys.Contains(key))
-                    return;
-                _writers[writer].Add(key);
-            }
-            else
-            {
-                _writers[writer] = [key];
-            }
-        }
-
-        public void UnregisterRead(Action<string> reader)
-        {
-            _readers.Remove(reader);
-        }
-
-        public void UnregisterWrite(Func<string> writer)
-        {
-            _writers.Remove(writer);
-        }
-
-        public void UnregisterRead(string key, Action<string> reader)
-        {
-            if (_readers.TryGetValue(reader, out var keys))
-            {
-                keys.Remove(key);
-                if (keys.Count == 0)
-                    _readers.Remove(reader);
-            }
-        }
-
-        public void UnregisterWrite(string key, Func<string> writer)
-        {
-            if (_writers.TryGetValue(writer, out var keys))
-            {
-                keys.Remove(key);
-                if (keys.Count == 0)
-                    _writers.Remove(writer);
             }
         }
     }
