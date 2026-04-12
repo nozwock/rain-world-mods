@@ -3,7 +3,7 @@ using BepInEx;
 using Common.Hooks;
 using RWCustom;
 
-namespace InfinitePassages;
+namespace BetterMap;
 
 [BepInAutoPlugin(id: "nozwock.BetterMap")]
 public partial class Plugin : BaseUnityPlugin
