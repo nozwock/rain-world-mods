@@ -52,12 +52,12 @@ static class SaveGame
             }
         }
 
-        public void ApplyWritersPrepare(List<string> unrecongnizedSaveStrings)
+        public void ApplyWriters(List<string> unrecongnizedSaveStrings)
         {
+            // Remove key-value that are to be updated
             var writerKeys = _writers
                 .SelectMany(kvp => kvp.Value.Select(str => str))
                 .ToHashSet();
-
             unrecongnizedSaveStrings.RemoveAll(saveString =>
             {
                 var splits = Regex.Split(saveString, FieldDelimiter);
@@ -66,11 +66,7 @@ static class SaveGame
                 var key = splits[0];
                 return writerKeys.Contains(key);
             });
-        }
 
-        public string ApplyWriters(string saveString)
-        {
-            var builder = new StringBuilder(saveString);
             foreach (var kvp in _writers)
             {
                 var (writer, keys) = (kvp.Key, kvp.Value);
@@ -91,14 +87,10 @@ static class SaveGame
 
                 foreach (var key in keys)
                 {
-                    builder.Append(key);
-                    builder.Append(FieldDelimiter);
-                    builder.Append(writeString);
-                    builder.Append(ParentDelimiter);
+                    // Game will append these to final string
+                    unrecongnizedSaveStrings.Add($"{key}{FieldDelimiter}{writeString}");
                 }
             }
-
-            return builder.ToString();
         }
 
         // TODO: API for queuing removal of key-value in savedata
@@ -214,14 +206,7 @@ static class SaveGame
         On.PlayerProgression.MiscProgressionData.orig_ToString orig,
         PlayerProgression.MiscProgressionData self)
     {
-        ProgressionData.ApplyWritersPrepare(self.unrecognizedSaveStrings);
-
-        var saveString = orig(self);
-
-        Debug.Log($"{logPrefix} Writing MiscProgressionData: Before: saveString={saveString.Length}");
-        saveString = ProgressionData.ApplyWriters(saveString);
-        Debug.Log($"{logPrefix} Writing MiscProgressionData: After: saveString={saveString.Length}");
-
-        return saveString;
+        ProgressionData.ApplyWriters(self.unrecognizedSaveStrings);
+        return orig(self);
     }
 }
