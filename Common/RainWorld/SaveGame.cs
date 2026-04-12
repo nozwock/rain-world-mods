@@ -242,32 +242,16 @@ static class SaveGame
 
         internal void ApplyWriters(List<string> unrecongnizedSaveStrings)
         {
-            if (_writers.Count == 0)
-                return;
-
-            // FIXME: Update instead of remove all first since a writer may fail leaving with no data
-
-            // Remove key-value that are to be updated
-            var writerKeys = _writers
-                .SelectMany(kvp => kvp.Value.Select(kvp => kvp.Key))
-                .ToHashSet();
-            unrecongnizedSaveStrings.RemoveAll(saveString =>
+            static string? GetWriterSaveString(Dictionary<Func<string>, bool> writers)
             {
-                var splits = Regex.Split(saveString, FieldDelimiter);
-                if (splits.Length == 0)
-                    return false;
-                var key = splits[0];
-                return writerKeys.Contains(key);
-            });
+                // There's only a single writer for each key
+                var kvp = writers.Single();
+                var (writer, preprocess) = (kvp.Key, kvp.Value);
 
-            foreach (var kvp in _writers)
-            {
-                var (writer, keys) = (kvp.Key, kvp.Value);
-
-                string? writeString = null;
+                string? data = null;
                 try
                 {
-                    writeString = writer();
+                    data = writer();
                 }
                 catch (Exception ex)
                 {
@@ -276,24 +260,52 @@ static class SaveGame
                         + $"{GetMethodFullName(writer.Method)}: {ex}");
                 }
 
-                if (writeString is null)
+                if (data is null)
+                    return null;
+                if (preprocess)
+                    data = Convert.ToBase64String(Encoding.UTF8.GetBytes(data));
+
+                return data;
+            }
+
+            if (_writers.Count == 0)
+                return;
+
+            // Update existing keyed saveStrings
+            var keyWriters = TransposeDelegates(_writers);
+            var existingKeys = new HashSet<string>();
+            for (var i = 0; i < unrecongnizedSaveStrings.Count; i++)
+            {
+                var splits = Regex.Split(unrecongnizedSaveStrings[i], FieldDelimiter);
+                if (splits.Length < 1)
                     continue;
 
-                foreach (var kvp2 in keys)
+                var key = splits[0];
+                if (keyWriters.TryGetValue(key, out var writers))
                 {
-                    var (key, preprocess) = (kvp2.Key, kvp2.Value);
+                    existingKeys.Add(key);
 
-                    // Game will append these to final string
-                    if (preprocess)
-                    {
-                        var encodedWriteString = Convert.ToBase64String(Encoding.UTF8.GetBytes(writeString));
-                        unrecongnizedSaveStrings.Add(GetSaveString(key, encodedWriteString));
-                    }
-                    else
-                    {
-                        unrecongnizedSaveStrings.Add(GetSaveString(key, writeString));
-                    }
+                    var data = GetWriterSaveString(writers);
+                    if (data is null)
+                        continue;
+
+                    // Updating instead of removing all keys that could be written anyways since a writer may fail
+                    // leaving with no data
+                    unrecongnizedSaveStrings[i] = GetSaveString(key, data);
                 }
+            }
+
+            // Add new key-value save strings
+            foreach (var kvp in keyWriters.Where(t => !existingKeys.Contains(t.Key)))
+            {
+                var (key, writers) = (kvp.Key, kvp.Value);
+
+                var data = GetWriterSaveString(writers);
+                if (data is null)
+                    continue;
+
+                // Game will append these to the final string
+                unrecongnizedSaveStrings.Add(GetSaveString(key, data));
             }
         }
 
