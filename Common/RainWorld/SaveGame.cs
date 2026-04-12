@@ -13,8 +13,8 @@ static class SaveGame
 {
     public abstract class SaveGameBase
     {
-        // bool is the preprocess flag, base64 encoding/decoding for the value in key-value save string
-        // It serves as escaping for game's custom save format special meaning literals like <dpA>, etc.
+        // bool is the preprocess flag, for base64 encoding/decoding of the value in key-value save string
+        // It serves as escaping for game's custom save format's special meaning literals like `<dpA>`, and others
         protected Dictionary<Action<string>, Dictionary<string, bool>> _readers = [];
         protected Dictionary<Func<string>, Dictionary<string, bool>> _writers = [];
 
@@ -207,11 +207,15 @@ static class SaveGame
                                     throw decodeEx;
                                 }
 
-                                // TODO: Still call the reader callback but pass in null so that the consumer knows
-                                // there only was some issue with decoding string and that savestring exists for the key
+                                // XXX Consider invoking the reader callback even in the case of decode error, just
+                                // pass in null instead so that the callback knows there was only some issue with
+                                // decoding string and that at least save string exists for the supplied key
                                 //
-                                // The callback can then try to manually parse the savestring data via .Read() with
-                                // preprocess false if needed
+                                // This'll allow the callback to handle this case on its end, and if desired it could
+                                // also try to manually recover save string data via .Read(preprocess: false)
+                                //
+                                // On the other hand, is it really worth making the reader callback signature nullable
+                                // from Action<string> to Action<string?> for an error that'll rarely ever happen?
                                 reader(decodedValue!);
                             }
                             else
