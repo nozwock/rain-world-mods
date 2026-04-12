@@ -28,6 +28,8 @@ static class SaveGame
             return $"{type.Assembly.GetName().Name}::{type.FullName}.{method.Name}";
         }
 
+        string GetSaveString(string key, string value) => $"{key}{FieldDelimiter}{value}";
+
         /// <summary>
         /// Only works once game has started, i.e. `Singleton.Game` is not null
         /// </summary>
@@ -76,11 +78,11 @@ static class SaveGame
             if (preprocess)
             {
                 var encodedValue = Convert.ToBase64String(Encoding.UTF8.GetBytes(value));
-                unrecognizedSaveStrings.Add($"{key}{FieldDelimiter}{encodedValue}");
+                unrecognizedSaveStrings.Add(GetSaveString(key, encodedValue));
             }
             else
             {
-                unrecognizedSaveStrings.Add($"{key}{FieldDelimiter}{value}");
+                unrecognizedSaveStrings.Add(GetSaveString(key, value));
             }
 
             return true;
@@ -291,11 +293,11 @@ static class SaveGame
                     if (preprocess)
                     {
                         var encodedWriteString = Convert.ToBase64String(Encoding.UTF8.GetBytes(writeString));
-                        unrecongnizedSaveStrings.Add($"{key}{FieldDelimiter}{encodedWriteString}");
+                        unrecongnizedSaveStrings.Add(GetSaveString(key, encodedWriteString));
                     }
                     else
                     {
-                        unrecongnizedSaveStrings.Add($"{key}{FieldDelimiter}{writeString}");
+                        unrecongnizedSaveStrings.Add(GetSaveString(key, writeString));
                     }
                 }
             }
