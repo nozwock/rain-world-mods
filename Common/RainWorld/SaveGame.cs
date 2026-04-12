@@ -341,6 +341,8 @@ static class SaveGame
             return;
         isInit = false;
 
+        Singleton.Reset();
+
         DeathPersistentData = new();
         On.DeathPersistentSaveData.FromString -= Hook_DeathPersistentSaveData_FromString;
         On.DeathPersistentSaveData.SaveToString -= Hook_DeathPersistentSaveData_SaveToString;
