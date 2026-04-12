@@ -182,17 +182,17 @@ static class SaveGame
             }
         }
 
-        public void CancelRead(Action<string> reader)
+        public void UnregisterRead(Action<string> reader)
         {
             _readers.Remove(reader);
         }
 
-        public void CancelWrite(Func<string> writer)
+        public void UnregisterWrite(Func<string> writer)
         {
             _writers.Remove(writer);
         }
 
-        public void CancelRead(string key, Action<string> reader)
+        public void UnregisterRead(string key, Action<string> reader)
         {
             if (_readers.TryGetValue(reader, out var keys))
             {
@@ -202,7 +202,7 @@ static class SaveGame
             }
         }
 
-        public void CancelWrite(string key, Func<string> writer)
+        public void UnregisterWrite(string key, Func<string> writer)
         {
             if (_writers.TryGetValue(writer, out var keys))
             {
