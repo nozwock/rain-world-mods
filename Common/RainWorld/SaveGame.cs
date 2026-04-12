@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
@@ -12,8 +13,10 @@ static class SaveGame
 {
     public abstract class SaveGameBase
     {
-        protected Dictionary<Action<string>, HashSet<string>> _readers = [];
-        protected Dictionary<Func<string>, HashSet<string>> _writers = [];
+        // bool is the preprocess flag, base64 encoding/decoding for the value in key-value save string
+        // It serves as escaping for game's custom save format special meaning literals like <dpA>, etc.
+        protected Dictionary<Action<string>, Dictionary<string, bool>> _readers = [];
+        protected Dictionary<Func<string>, Dictionary<string, bool>> _writers = [];
 
         public abstract string ParentDelimiter { get; }
         public abstract string FieldDelimiter { get; }
@@ -21,7 +24,10 @@ static class SaveGame
 
         static string GetMethodFullName(MethodInfo method) => $"{method.DeclaringType.Name}.{method.Name}";
 
-        public string? Read(string key)
+        /// <summary>
+        /// Only works once game has started, i.e. `Singleton.Game` is not null
+        /// </summary>
+        public string? Read(string key, bool preprocess = true)
         {
             var unrecognizedSaveStrings = UnrecognizedSaveStrings;
             if (unrecognizedSaveStrings is null)
@@ -35,24 +41,50 @@ static class SaveGame
 
                 var sKey = splits[0];
                 if (key == sKey)
-                    return splits[1];
+                {
+                    var value = splits[1];
+                    if (preprocess)
+                    {
+                        // Let the exceptions flow
+                        var decodedValue = Encoding.UTF8.GetString(Convert.FromBase64String(value));
+                        return decodedValue;
+                    }
+                    else
+                    {
+                        return value;
+                    }
+                }
             }
 
             return null;
         }
 
-        public bool Write(string key, string value)
+        /// <summary>
+        /// Only works once game has started, i.e. `Singleton.Game` is not null
+        /// </summary>
+        public bool Write(string key, string value, bool preprocess = true)
         {
             var unrecognizedSaveStrings = UnrecognizedSaveStrings;
             if (unrecognizedSaveStrings is null)
                 return false;
 
             Remove(key);
-            unrecognizedSaveStrings.Add($"{key}{FieldDelimiter}{value}");
+            if (preprocess)
+            {
+                var encodedValue = Convert.ToBase64String(Encoding.UTF8.GetBytes(value));
+                unrecognizedSaveStrings.Add($"{key}{FieldDelimiter}{encodedValue}");
+            }
+            else
+            {
+                unrecognizedSaveStrings.Add($"{key}{FieldDelimiter}{value}");
+            }
 
             return true;
         }
 
+        /// <summary>
+        /// Only works once game has started, i.e. `Singleton.Game` is not null
+        /// </summary>
         public bool Remove(string key, int count = 1)
         {
             var unrecognizedSaveStrings = UnrecognizedSaveStrings;
@@ -80,31 +112,38 @@ static class SaveGame
             return removeCount > 0;
         }
 
-        public void RegisterRead(string key, Action<string> reader)
+        // TODO: Have common internal impl for Register* (and maybe Unregister*) to dispatch to
+        public void RegisterRead(string key, Action<string> reader, bool preprocess = true)
         {
             if (_readers.TryGetValue(reader, out var keys))
             {
-                if (keys.Contains(key))
+                if (keys.ContainsKey(key))
                     return;
-                _readers[reader].Add(key);
+                _readers[reader].Add(key, preprocess);
             }
             else
             {
-                _readers[reader] = [key];
+                _readers[reader] = new()
+                {
+                    {key, preprocess},
+                };
             }
         }
 
-        public void RegisterWrite(string key, Func<string> writer)
+        public void RegisterWrite(string key, Func<string> writer, bool preprocess = true)
         {
             if (_writers.TryGetValue(writer, out var keys))
             {
-                if (keys.Contains(key))
+                if (keys.ContainsKey(key))
                     return;
-                _writers[writer].Add(key);
+                _writers[writer].Add(key, preprocess);
             }
             else
             {
-                _writers[writer] = [key];
+                _writers[writer] = new()
+                {
+                    {key, preprocess},
+                };
             }
         }
 
@@ -138,13 +177,17 @@ static class SaveGame
             }
         }
 
-        // TODO: Handle escaping to string data by base64 encoding it
         internal void ApplyReaders(IReadOnlyList<string> unrecongnizedSaveStrings)
         {
+            // Transform (reader -> (key -> flag)) to (key -> (reader -> flag))
             var keyReaders = _readers
-                .SelectMany(kvp => kvp.Value.Select(str => (str, reader: kvp.Key)))
-                .GroupBy(t => t.str, t => t.reader)
-                .ToDictionary(g => g.Key, g => g.ToHashSet());
+                .SelectMany(kvp =>
+                    kvp.Value.Select(kvp2 =>
+                        (str: kvp2.Key, t: (reader: kvp.Key, preprocess: kvp2.Value))))
+                .GroupBy(t => t.str, t => t.t)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.ToDictionary(it => it.reader, it => it.preprocess));
 
             foreach (var saveString in unrecongnizedSaveStrings)
             {
@@ -155,11 +198,39 @@ static class SaveGame
                 if (keyReaders.TryGetValue(key, out var readers))
                 {
                     var value = splits[1];
-                    foreach (var reader in readers)
+
+                    string? decodedValue = null;
+                    Exception? decodeEx = null;
+                    try
                     {
+                        decodedValue = Encoding.UTF8.GetString(Convert.FromBase64String(value));
+                    }
+                    catch (Exception ex)
+                    {
+                        decodeEx = ex;
+                    }
+
+                    foreach (var kvp in readers)
+                    {
+                        var (reader, preprocess) = (kvp.Key, kvp.Value);
                         try
                         {
-                            reader(value);
+                            if (preprocess)
+                            {
+                                if (decodeEx is not null)
+                                {
+                                    throw decodeEx;
+                                }
+
+                                // TODO: Still call the reader callback but pass in null so that the consumer knows
+                                // there only was some issue with decoding string and that savestring exists for the key
+                                //
+                                // The callback can then try to manually parse the savestring data via .Read() with
+                                // preprocess false if needed
+                                reader(decodedValue!);
+                            }
+                            else
+                                reader(value);
                         }
                         catch (Exception ex)
                         {
@@ -173,9 +244,11 @@ static class SaveGame
 
         internal void ApplyWriters(List<string> unrecongnizedSaveStrings)
         {
+            // FIXME: Update instead of remove all first since a writer may fail leaving with no data
+
             // Remove key-value that are to be updated
             var writerKeys = _writers
-                .SelectMany(kvp => kvp.Value.Select(str => str))
+                .SelectMany(kvp => kvp.Value.Select(kvp => kvp.Key))
                 .ToHashSet();
             unrecongnizedSaveStrings.RemoveAll(saveString =>
             {
@@ -204,10 +277,20 @@ static class SaveGame
                 if (writeString is null)
                     continue;
 
-                foreach (var key in keys)
+                foreach (var kvp2 in keys)
                 {
+                    var (key, preprocess) = (kvp2.Key, kvp2.Value);
+
                     // Game will append these to final string
-                    unrecongnizedSaveStrings.Add($"{key}{FieldDelimiter}{writeString}");
+                    if (preprocess)
+                    {
+                        var encodedWriteString = Convert.ToBase64String(Encoding.UTF8.GetBytes(writeString));
+                        unrecongnizedSaveStrings.Add($"{key}{FieldDelimiter}{encodedWriteString}");
+                    }
+                    else
+                    {
+                        unrecongnizedSaveStrings.Add($"{key}{FieldDelimiter}{writeString}");
+                    }
                 }
             }
         }
