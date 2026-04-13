@@ -128,7 +128,6 @@ public partial class Plugin : BaseUnityPlugin
         {
             var (start, end) = GetVisibleRoomArea(map, room, 0);
 
-            // TODO: Use (room.abstractRoom.FileName, camPos) to track whether the area was already uncovered or not
             for (var x = start.x; x <= end.x; x++)
             {
                 for (var y = start.y; y <= end.y; y++)

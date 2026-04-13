@@ -37,7 +37,6 @@
     <PackageReference Include="UnityEngine.Modules" Version="2020.3.45" IncludeAssets="compile" />
 
     <!-- Requires SDK 10+ -->
-    <!-- Doesn't support BepInEx 6, will need to fork it -->
     <PackageReference Include="Hamunii.BepInEx.AutoPlugin" Version="2.1" PrivateAssets="all"/>
   </ItemGroup>
 
