@@ -17,9 +17,11 @@ public static class UIQueueEx
         void TryApply(UIQueue queue, List<UIelement> group);
     }
 
-    public record struct ModifyQueueAll<T>(Action<UIQueue, List<UIelement>> Mutator) : IModifyQueueAll
+    public class ModifyQueueAll(Action<UIQueue, List<UIelement>> Mutator) : ModifyQueueAll<UIelement>(Mutator) { }
+
+    public class ModifyQueueAll<T>(Action<UIQueue, List<UIelement>> Mutator) : IModifyQueueAll
     {
-        public readonly void TryApply(UIQueue queue, List<UIelement> group)
+        public void TryApply(UIQueue queue, List<UIelement> group)
         {
             if (group.OfType<T>().Any())
                 Mutator(queue, group);
