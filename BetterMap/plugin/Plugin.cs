@@ -146,6 +146,29 @@ public partial class Plugin : BaseUnityPlugin
         UncoverVisibleRoomArea(self, camPos);
     }
 
+    // Original Player.MapDiscoveryActive always returns false within MoveCamera due to player.room which always seem to
+    // came out null
+    bool MapDiscoveryActive(HUD.Map map)
+    {
+        if (map.hud.owner is not Player player)
+            return map.hud.owner.MapDiscoveryActive;
+
+        if (
+            player.Consious
+            && player.AI == null
+            && player.abstractCreature.Room?.realizedRoom is { } room
+            && !room.world.singleRoomWorld
+            && player.dangerGrasp == null
+            && player.mainBodyChunk.pos.x > 0f
+            && player.mainBodyChunk.pos.x < room.PixelWidth
+            && player.mainBodyChunk.pos.y > 0f)
+        {
+            return player.mainBodyChunk.pos.y < room.PixelHeight;
+        }
+
+        return false;
+    }
+
     void UncoverVisibleRoomArea(RoomCamera camera, int camPos)
     {
         var map = camera.hud?.map;
@@ -155,7 +178,7 @@ public partial class Plugin : BaseUnityPlugin
         // Sanity checks borrowed from near Map.DiscoverMap()
         if (map.mapLoaded
             && map.discLoaded
-            && map.hud.owner.MapDiscoveryActive
+            && MapDiscoveryActive(map)
             && map.discoverTexture is { } discoverTexture
             && map.hud.owner is Player player
             && player.abstractCreature.Room?.realizedRoom is { } room
