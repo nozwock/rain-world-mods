@@ -31,14 +31,34 @@ public static class UIQueueEx
         public readonly void Apply(UIQueue queue, List<UIelement> group) => Mutator(queue, group);
     }
 
-    public static void SetOpSimpleButtonMinLabelSize(UIQueue _, List<UIelement> elems)
+    public static void SetButtonMinLabelSize(UIQueue _, List<UIelement> elems) => SetButtonSizeX(_, elems);
+
+    public static Action<UIQueue, List<UIelement>> SetButtonAtleastSizeX(float x)
     {
-        if (!elems.OfType<OpSimpleButton>().Any()) return;
+        return (queue, elems) =>
+        {
+            if (x < 0) return;
+            SetButtonSizeX(queue, elems, x);
+        };
+    }
 
-        var (btn, i) = elems.OfType<OpSimpleButton>()
-            .Select((elem, i) => (elem, i)).First();
+    static void SetButtonSizeX(UIQueue _, List<UIelement> elems, float atleastX = 0)
+    {
+        var result = elems
+            .Select((op, i) => (op, i))
+            .FirstOrDefault(t => t.op is OpSimpleButton or OpHoldButton { isRectangular: true });
 
-        SetSizeX(btn, LabelTest.GetWidth(btn.text) + 20, elems.Skip(i + 1));
+        var (btn, i) = result;
+        if (btn == null) return;
+
+        var text = btn switch
+        {
+            OpSimpleButton b => b.text,
+            OpHoldButton b => b.text,
+            _ => null
+        };
+
+        SetSizeX(btn, Mathf.Max(atleastX, LabelTest.GetWidth(text) + 20), elems.Skip(i + 1));
     }
 
     public static Action<UIQueue, List<UIelement>> SetSizeX<T>(float x) where T : UIelement
