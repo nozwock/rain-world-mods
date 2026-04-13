@@ -88,6 +88,7 @@ public partial class Plugin : BaseUnityPlugin
         SaveGame.Init();
 
         On.HUD.Map.ctor += Hook_Map_ctor;
+        On.HUD.Map.InitiateMapView += Hook_Map_InitiateMapView;
 
         On.RoomCamera.MoveCamera_int += Hook_RoomCamera_MoveCamera_int;
         On.RoomCamera.MoveCamera_Room_int += Hook_RoomCamera_MoveCamera_Room_int;
@@ -113,8 +114,17 @@ public partial class Plugin : BaseUnityPlugin
         HUD.Map.MapData mapData)
     {
         orig(self, hud, mapData);
-        if (!self.revealAllDiscovered) // Game revealAllDiscovered sets for fast travel/region map
-            self.revealAllDiscovered = cfgInstantMapReveal.Value;
+
+        // Game sets revealAllDiscovered for fast travel/region map
+        if (cfgInstantMapReveal.Value)
+            self.revealAllDiscovered = true;
+    }
+
+    void Hook_Map_InitiateMapView(On.HUD.Map.orig_InitiateMapView orig, HUD.Map self)
+    {
+        if (cfgInstantMapReveal.Value)
+            self.resetRevealCounter = 0;
+        orig(self);
     }
 
     void Hook_RoomCamera_MoveCamera_int(
