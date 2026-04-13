@@ -206,15 +206,19 @@ static class SaveGame
                     foreach (var kvp in readers)
                     {
                         var (reader, preprocess) = (kvp.Key, kvp.Value);
+
+                        if (preprocess && decodeEx is not null)
+                        {
+                            Debug.LogError(
+                                $"{logPrefix} Failed to prepare save string for delegate: "
+                                + $"{GetMethodFullName(reader.Method)}, value=\"{value}\": {decodeEx}");
+                            continue;
+                        }
+
                         try
                         {
                             if (preprocess)
                             {
-                                if (decodeEx is not null)
-                                {
-                                    throw decodeEx;
-                                }
-
                                 // XXX Consider invoking the reader callback even in the case of decode error, just
                                 // pass in null instead so that the callback knows there was only some issue with
                                 // decoding string and that at least save string exists for the supplied key
