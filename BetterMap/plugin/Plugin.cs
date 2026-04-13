@@ -72,6 +72,8 @@ public partial class Plugin : BaseUnityPlugin
 
         try
         {
+            SaveGame.Reset();
+
             HookGen.UnpatchSelf();
             managedHooks.Dispose();
         }
