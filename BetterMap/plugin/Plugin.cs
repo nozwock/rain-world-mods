@@ -106,15 +106,6 @@ public partial class Plugin : BaseUnityPlugin
 
     string ProgressionData_Write() => JsonConvert.SerializeObject(progressionData);
 
-    void Hook_RoomCamera_MoveCamera_int(
-        On.RoomCamera.orig_MoveCamera_int orig,
-        RoomCamera self,
-        int camPos)
-    {
-        orig(self, camPos);
-        UncoverVisibleRoomArea(self, camPos);
-    }
-
     void Hook_Map_ctor(
         On.HUD.Map.orig_ctor orig,
         HUD.Map self,
@@ -124,6 +115,15 @@ public partial class Plugin : BaseUnityPlugin
         orig(self, hud, mapData);
         if (!self.revealAllDiscovered) // Game revealAllDiscovered sets for fast travel/region map
             self.revealAllDiscovered = cfgInstantMapReveal.Value;
+    }
+
+    void Hook_RoomCamera_MoveCamera_int(
+        On.RoomCamera.orig_MoveCamera_int orig,
+        RoomCamera self,
+        int camPos)
+    {
+        orig(self, camPos);
+        UncoverVisibleRoomArea(self, camPos);
     }
 
     void Hook_RoomCamera_MoveCamera_Room_int(
