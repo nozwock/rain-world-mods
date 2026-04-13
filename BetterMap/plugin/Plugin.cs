@@ -25,6 +25,8 @@ public partial class Plugin : BaseUnityPlugin
     ManagedHooks managedHooks;
     ProgressionData progressionData = new();
 
+    Configurable<bool> cfgInstantMapReveal = new(true);
+
     public Plugin()
     {
         managedHooks = new(Logger);
@@ -46,6 +48,11 @@ public partial class Plugin : BaseUnityPlugin
         {
             var optionInterface = MachineConnector.GetRegisteredOI(Id);
             var config = optionInterface.config;
+
+            cfgInstantMapReveal = config.Bind(
+                "InstantMapRevealDiscovered",
+                cfgInstantMapReveal.Value,
+                new ConfigurableInfo("Reveal all of the discovered map instantly once the map is opened"));
 
             InitHooks();
         }
@@ -78,6 +85,8 @@ public partial class Plugin : BaseUnityPlugin
     {
         SaveGame.Init();
 
+        On.HUD.Map.ctor += Hook_Map_ctor;
+
         On.RoomCamera.MoveCamera_int += Hook_RoomCamera_MoveCamera_int;
         On.RoomCamera.MoveCamera_Room_int += Hook_RoomCamera_MoveCamera_Room_int;
 
@@ -102,6 +111,17 @@ public partial class Plugin : BaseUnityPlugin
     {
         orig(self, camPos);
         UncoverVisibleRoomArea(self, camPos);
+    }
+
+    void Hook_Map_ctor(
+        On.HUD.Map.orig_ctor orig,
+        HUD.Map self,
+        HUD.HUD hud,
+        HUD.Map.MapData mapData)
+    {
+        orig(self, hud, mapData);
+        if (!self.revealAllDiscovered) // Game revealAllDiscovered sets for fast travel/region map
+            self.revealAllDiscovered = cfgInstantMapReveal.Value;
     }
 
     void Hook_RoomCamera_MoveCamera_Room_int(
