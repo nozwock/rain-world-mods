@@ -1,1 +1,1 @@
-InstantRevealDiscovered|Instantly Reveal Discovered Map
+InstantMapRevealDiscovered|Instantly Reveal Discovered Map
