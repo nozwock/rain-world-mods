@@ -28,9 +28,9 @@ public static class UIQueueEx
         }
     }
 
-    public record struct ModifyQueueNext(Action<UIQueue, List<UIelement>> Mutator)
+    public class ModifyQueueNext(Action<UIQueue, List<UIelement>> Mutator)
     {
-        public readonly void Apply(UIQueue queue, List<UIelement> group) => Mutator(queue, group);
+        public void Apply(UIQueue queue, List<UIelement> group) => Mutator(queue, group);
     }
 
     public static void SetButtonMinLabelSize(UIQueue _, List<UIelement> elems) => SetButtonSizeX(_, elems);
