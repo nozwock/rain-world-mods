@@ -17,8 +17,11 @@ translation for the config `key` in `text/text_*/strings.txt`[^1].
 ```
 RainWorld
     ProcessManager
-        RainWorldGame
-            Player
+        RainWorldGame currentMainLoop
+            Player FirstRealizedPlayer
+            RoomCamera[] cameras
+                HUD hud
+                    HUD.Map map
 ```
 
 ```cs
