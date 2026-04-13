@@ -120,8 +120,11 @@ public partial class Plugin : BaseUnityPlugin
         if (map is null)
             return;
 
+        // Sanity checks borrowed from near Map.DiscoverMap()
         if (map.mapLoaded
             && map.discLoaded
+            && map.hud.owner.MapDiscoveryActive
+            && map.discoverTexture is { } discoverTexture
             && map.hud.owner is Player player
             && player.abstractCreature.Room?.realizedRoom is { } room
             && !progressionData.DiscoveredMapAreas.ContainsKey((room.abstractRoom.name, camPos)))
@@ -132,7 +135,7 @@ public partial class Plugin : BaseUnityPlugin
             {
                 for (var y = start.y; y <= end.y; y++)
                 {
-                    map.discoverTexture.SetPixel(x, y, discoveredTextureColor);
+                    discoverTexture.SetPixel(x, y, discoveredTextureColor);
                 }
             }
 
