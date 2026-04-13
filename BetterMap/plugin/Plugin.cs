@@ -10,10 +10,26 @@ namespace BetterMap;
 
 public class ProgressionData
 {
+    // Newtonsoft doesn't seem to support complex types as dictionary keys by default
+    public record struct MapAreaId(string RoomName, int CamPos)
+    {
+        // https://github.com/JamesNK/Newtonsoft.Json/issues/516#issuecomment-1325112839
+        public static explicit operator MapAreaId(string value)
+        {
+            var splits = value.Split(['|'], 2);
+            if (splits.Length == 2 && int.TryParse(splits[0], out var camPos))
+                return new(splits[1], camPos);
+
+            throw new ArgumentException($"Invalid {nameof(MapAreaId)}: {value}");
+        }
+
+        public override readonly string ToString() => $"{CamPos}|{RoomName}";
+    }
+
     /// <summary>
     /// bool is true if room corresponding to RoomName is fully uncovered, meant for full room uncover mode.
     /// </summary>
-    public Dictionary<(string RoomName, int CamPos), bool> DiscoveredMapAreas { get; set; } = [];
+    public Dictionary<MapAreaId, bool> DiscoveredMapAreas { get; set; } = [];
 }
 
 [BepInAutoPlugin(id: "nozwock.BetterMap")]
@@ -182,7 +198,7 @@ public partial class Plugin : BaseUnityPlugin
             && map.discoverTexture is { } discoverTexture
             && map.hud.owner is Player player
             && player.abstractCreature.Room?.realizedRoom is { } room
-            && !progressionData.DiscoveredMapAreas.ContainsKey((room.abstractRoom.name, camPos)))
+            && !progressionData.DiscoveredMapAreas.ContainsKey(new(room.abstractRoom.name, camPos)))
         {
             var (start, end) = GetVisibleRoomArea(map, room, 0);
 
@@ -194,7 +210,7 @@ public partial class Plugin : BaseUnityPlugin
                 }
             }
 
-            progressionData.DiscoveredMapAreas.Add((room.abstractRoom.name, camPos), false);
+            progressionData.DiscoveredMapAreas.Add(new(room.abstractRoom.name, camPos), false);
         }
     }
 
