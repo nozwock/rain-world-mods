@@ -1,9 +1,20 @@
 using System;
+using System.Collections.Generic;
 using BepInEx;
 using Common.Hooks;
+using Common.RainWorld;
+using Newtonsoft.Json;
 using RWCustom;
 
 namespace BetterMap;
+
+public class ProgressionData
+{
+    /// <summary>
+    /// bool is true if room corresponding to RoomName is fully uncovered, meant for full room uncover mode.
+    /// </summary>
+    public Dictionary<(string RoomName, int CamPos), bool> DiscoveredMapAreas { get; set; } = [];
+}
 
 [BepInAutoPlugin(id: "nozwock.BetterMap")]
 public partial class Plugin : BaseUnityPlugin
@@ -12,6 +23,7 @@ public partial class Plugin : BaseUnityPlugin
 
     bool isInit;
     ManagedHooks managedHooks;
+    ProgressionData progressionData = new();
 
     public Plugin()
     {
@@ -64,11 +76,24 @@ public partial class Plugin : BaseUnityPlugin
 
     void InitHooks()
     {
+        SaveGame.Init();
+
         On.RoomCamera.MoveCamera_int += Hook_RoomCamera_MoveCamera_int;
         On.RoomCamera.MoveCamera_Room_int += Hook_RoomCamera_MoveCamera_Room_int;
 
+        SaveGame.ProgressionData.RegisterRead(Id, ProgressionData_Read);
+        SaveGame.ProgressionData.RegisterWrite(Id, ProgressionData_Write);
+
         managedHooks.LogPatchedMethods(includeHookGen: true);
     }
+
+    void ProgressionData_Read(string obj)
+    {
+        if (JsonConvert.DeserializeObject<ProgressionData>(obj) is { } data)
+            progressionData = data;
+    }
+
+    string ProgressionData_Write() => JsonConvert.SerializeObject(progressionData);
 
     void Hook_RoomCamera_MoveCamera_int(
         On.RoomCamera.orig_MoveCamera_int orig,
@@ -76,7 +101,7 @@ public partial class Plugin : BaseUnityPlugin
         int camPos)
     {
         orig(self, camPos);
-        UncoverVisibleRoomArea(self);
+        UncoverVisibleRoomArea(self, camPos);
     }
 
     void Hook_RoomCamera_MoveCamera_Room_int(
@@ -86,10 +111,10 @@ public partial class Plugin : BaseUnityPlugin
         int camPos)
     {
         orig(self, newRoom, camPos);
-        UncoverVisibleRoomArea(self);
+        UncoverVisibleRoomArea(self, camPos);
     }
 
-    void UncoverVisibleRoomArea(RoomCamera camera)
+    void UncoverVisibleRoomArea(RoomCamera camera, int camPos)
     {
         var map = camera.hud?.map;
         if (map is null)
@@ -98,7 +123,8 @@ public partial class Plugin : BaseUnityPlugin
         if (map.mapLoaded
             && map.discLoaded
             && map.hud.owner is Player player
-            && player.abstractCreature.Room?.realizedRoom is { } room)
+            && player.abstractCreature.Room?.realizedRoom is { } room
+            && !progressionData.DiscoveredMapAreas.ContainsKey((room.abstractRoom.name, camPos)))
         {
             var (start, end) = GetVisibleRoomArea(map, room, 0);
 
@@ -110,6 +136,8 @@ public partial class Plugin : BaseUnityPlugin
                     map.discoverTexture.SetPixel(x, y, discoveredTextureColor);
                 }
             }
+
+            progressionData.DiscoveredMapAreas.Add((room.abstractRoom.name, camPos), false);
         }
     }
 

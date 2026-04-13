@@ -3,4 +3,8 @@
     <AssemblyTitle>Better Map</AssemblyTitle>
     <Version>0.1.0</Version>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
 </Project>
