@@ -74,6 +74,7 @@ public partial class Plugin : BaseUnityPlugin
                 progressionData.DiscoveredMapAreas.Clear();
             };
             config.cfgInstantMapReveal.OnChange += OnChange_InstantMapReveal;
+            config.cfgInstantDiscoveredAreaReveal.OnChange += OnChange_InstantDiscoveredAreaReveal;
 
             InitHooks();
         }
@@ -99,6 +100,7 @@ public partial class Plugin : BaseUnityPlugin
             managedHooks.Dispose();
 
             config.cfgInstantMapReveal.OnChange -= OnChange_InstantMapReveal;
+            config.cfgInstantDiscoveredAreaReveal.OnChange -= OnChange_InstantDiscoveredAreaReveal;
         }
         catch (Exception ex)
         {
@@ -110,13 +112,11 @@ public partial class Plugin : BaseUnityPlugin
     {
         SaveGame.Init();
 
-        On.HUD.Map.ctor += Hook_Map_ctor;
-        On.HUD.Map.InitiateMapView += Hook_Map_InitiateMapView;
-
         On.RoomCamera.MoveCamera_int += Hook_RoomCamera_MoveCamera_int;
         On.RoomCamera.MoveCamera_Room_int += Hook_RoomCamera_MoveCamera_Room_int;
 
         OnChange_InstantMapReveal();
+        OnChange_InstantDiscoveredAreaReveal();
 
         SaveGame.ProgressionData.RegisterRead(Id, ProgressionData_Read);
         SaveGame.ProgressionData.RegisterWrite(Id, ProgressionData_Write);
@@ -132,6 +132,17 @@ public partial class Plugin : BaseUnityPlugin
 
     string ProgressionData_Write() => JsonConvert.SerializeObject(progressionData);
 
+    void OnChange_InstantDiscoveredAreaReveal()
+    {
+        On.HUD.Map.ctor -= Hook_Map_ctor;
+        On.HUD.Map.InitiateMapView -= Hook_Map_InitiateMapView;
+        if (config.cfgInstantDiscoveredAreaReveal.Value)
+        {
+            On.HUD.Map.ctor += Hook_Map_ctor;
+            On.HUD.Map.InitiateMapView += Hook_Map_InitiateMapView;
+        }
+    }
+
     void Hook_Map_ctor(
         On.HUD.Map.orig_ctor orig,
         HUD.Map self,
@@ -140,15 +151,13 @@ public partial class Plugin : BaseUnityPlugin
     {
         orig(self, hud, mapData);
 
-        // Game sets revealAllDiscovered for fast travel/region map
-        if (config.cfgInstantDiscoveredAreaReveal.Value)
-            self.revealAllDiscovered = true;
+        // Game also sets revealAllDiscovered for fast travel/region map
+        self.revealAllDiscovered = true;
     }
 
     void Hook_Map_InitiateMapView(On.HUD.Map.orig_InitiateMapView orig, HUD.Map self)
     {
-        if (config.cfgInstantDiscoveredAreaReveal.Value)
-            self.resetRevealCounter = 0;
+        self.resetRevealCounter = 0;
         orig(self);
     }
 
