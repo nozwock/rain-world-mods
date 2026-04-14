@@ -11,25 +11,23 @@ namespace MapRemix;
 public class ProgressionData
 {
     // Newtonsoft doesn't seem to support complex types as dictionary keys by default
-    public record struct MapAreaId(string RoomName, int CamPos)
+    public record struct RoomAreaId(string RoomName, int CamPos)
     {
         // https://github.com/JamesNK/Newtonsoft.Json/issues/516#issuecomment-1325112839
-        public static explicit operator MapAreaId(string value)
+        public static explicit operator RoomAreaId(string value)
         {
             var splits = value.Split(['|'], 2);
             if (splits.Length == 2 && int.TryParse(splits[0], out var camPos))
                 return new(splits[1], camPos);
 
-            throw new ArgumentException($"Invalid {nameof(MapAreaId)}: {value}");
+            throw new ArgumentException($"Invalid {nameof(RoomAreaId)}: {value}");
         }
 
         public override readonly string ToString() => $"{CamPos}|{RoomName}";
     }
 
-    /// <summary>
-    /// bool is true if room corresponding to RoomName is fully uncovered, meant for full room uncover mode.
-    /// </summary>
-    public Dictionary<MapAreaId, bool> DiscoveredMapAreas { get; set; } = [];
+    public HashSet<RoomAreaId> DiscoveredRoomAreas { get; set; } = [];
+    public HashSet<string> DiscoveredRooms { get; set; } = [];
 }
 
 [BepInAutoPlugin(id: "nozwock.MapRemix")]
@@ -70,8 +68,10 @@ public partial class Plugin : BaseUnityPlugin
 
             config.OnResetDiscoveredMapCache = () =>
             {
-                Logger.LogDebug($"Clearing DiscoveredMapAreas: {progressionData.DiscoveredMapAreas.Count}");
-                progressionData.DiscoveredMapAreas.Clear();
+                Logger.LogDebug($"Clearing cache: areas={progressionData.DiscoveredRoomAreas.Count}, "
+                + $"rooms={progressionData.DiscoveredRooms.Count}");
+                progressionData.DiscoveredRoomAreas.Clear();
+                progressionData.DiscoveredRooms.Clear();
             };
             config.cfgMapDiscoveryMode.OnChange += OnChange_MapDiscoveryMode;
             config.cfgInstantMapReveal.OnChange += OnChange_InstantMapReveal;
@@ -258,14 +258,17 @@ public partial class Plugin : BaseUnityPlugin
             && map.hud.owner is Player player
             && player.abstractCreature.Room?.realizedRoom is { } room)
         {
-            var mapAreaId = new ProgressionData.MapAreaId(room.abstractRoom.name, camPos);
+            var mapAreaId = new ProgressionData.RoomAreaId(room.abstractRoom.name, camPos);
+            if (progressionData.DiscoveredRooms.Contains(mapAreaId.RoomName))
+                return;
+
             var discoveryMode = config.cfgMapDiscoveryMode.Value;
 
             (IntVector2 Start, IntVector2 End) rect;
             switch (discoveryMode)
             {
                 case MapDiscoveryMode.VisibleRoomArea:
-                    if (progressionData.DiscoveredMapAreas.ContainsKey(mapAreaId))
+                    if (progressionData.DiscoveredRoomAreas.Contains(mapAreaId))
                         return;
 
                     rect = GetVisibleRoomArea(map, room, 0);
@@ -279,12 +282,8 @@ public partial class Plugin : BaseUnityPlugin
                         NormalizeDifference(ref rect.Start.x, ref rect.End.x, targetDiff: 8);
                         NormalizeDifference(ref rect.Start.y, ref rect.End.y, targetDiff: 5);
                     }
-
                     break;
                 case MapDiscoveryMode.WholeRoom:
-                    if (progressionData.DiscoveredMapAreas.TryGetValue(mapAreaId, out var roomUncovered)
-                        && roomUncovered)
-                        return;
                     rect = GetRoomArea(map, room);
                     break;
                 default:
@@ -300,15 +299,10 @@ public partial class Plugin : BaseUnityPlugin
                 }
             }
 
-            if (progressionData.DiscoveredMapAreas.ContainsKey(mapAreaId))
-            {
-                if (discoveryMode == MapDiscoveryMode.WholeRoom)
-                    progressionData.DiscoveredMapAreas[mapAreaId] = true;
-            }
-            else
-            {
-                progressionData.DiscoveredMapAreas.Add(mapAreaId, discoveryMode == MapDiscoveryMode.WholeRoom);
-            }
+            if (discoveryMode == MapDiscoveryMode.WholeRoom)
+                progressionData.DiscoveredRooms.Add(mapAreaId.RoomName);
+            else if (discoveryMode == MapDiscoveryMode.VisibleRoomArea)
+                progressionData.DiscoveredRoomAreas.Add(mapAreaId);
         }
     }
 
