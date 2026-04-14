@@ -10,7 +10,7 @@ using Menu.Remix.MixedUI;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace BetterMap;
+namespace MapRemix;
 
 class RemixConfig : OptionInterface
 {
@@ -60,7 +60,7 @@ class RemixConfig : OptionInterface
             new UIQueueEx.ModifyQueueAll(UIQueueEx.SetButtonAtleastSizeX(120)),
 
             new UIQueueEx.Spacing(40),
-            new OpLabel.Queue("Better Map", FLabelAlignment.Center, true),
+            new OpLabel.Queue("Map Remix", FLabelAlignment.Center, true),
             new UIQueueEx.Spacing(40),
 
             new OpCheckBox.Queue(cfgInstantDiscoveredAreaReveal),

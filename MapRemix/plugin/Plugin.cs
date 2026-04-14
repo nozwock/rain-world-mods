@@ -6,7 +6,7 @@ using Common.RainWorld;
 using Newtonsoft.Json;
 using RWCustom;
 
-namespace BetterMap;
+namespace MapRemix;
 
 public class ProgressionData
 {
@@ -32,7 +32,7 @@ public class ProgressionData
     public Dictionary<MapAreaId, bool> DiscoveredMapAreas { get; set; } = [];
 }
 
-[BepInAutoPlugin(id: "nozwock.BetterMap")]
+[BepInAutoPlugin(id: "nozwock.MapRemix")]
 public partial class Plugin : BaseUnityPlugin
 {
     static readonly UnityEngine.Color discoveredTextureColor = new(1f, 1f, 1f);
