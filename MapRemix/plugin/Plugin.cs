@@ -273,16 +273,6 @@ public partial class Plugin : BaseUnityPlugin
                         return;
 
                     rect = GetMapRoomAreaRect(map, camera, room, camPos);
-                    if (config.cfgWorkaroundInaccurateVisibleAreaBound.Value)
-                    {
-                        // What we get from GetVisibleRoomArea (map scale) actually covers an area that's slightly
-                        // bigger than the screen size.
-                        // Like avg 12x5 when it should be 8x5 (non-widescreen) instead
-                        //
-                        // Hardcoded: 8x5 is what screen seems to be on map scale
-                        NormalizeDifference(ref rect.Start.x, ref rect.End.x, targetDiff: 8);
-                        NormalizeDifference(ref rect.Start.y, ref rect.End.y, targetDiff: 5);
-                    }
                     break;
                 case MapDiscoveryMode.WholeRoom:
                     rect = GetMapRoomRect(map, room);
@@ -332,14 +322,6 @@ public partial class Plugin : BaseUnityPlugin
         pos.x += camera.hDisplace + 8;
         pos.y += 18;
         return (new(pos.x, pos.y), new(pos.x + camera.sSize.x, pos.y + camera.sSize.y));
-    }
-
-    static void NormalizeDifference(ref int start, ref int end, int targetDiff)
-    {
-        int center = (start + end) / 2;
-
-        start = center - targetDiff / 2;
-        end = center + targetDiff / 2;
     }
 
     static bool IsNotDiscovered(HUD.Map map, int x, int y) => map.discoverTexture.GetPixel(x, y).r == 0f;
