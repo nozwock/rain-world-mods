@@ -195,7 +195,8 @@ public static class UIQueueEx
 
         var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
             .Where(f => f.FieldType == typeof(Color)
-                && f.Name.StartsWith("color", StringComparison.OrdinalIgnoreCase));
+                && f.Name.StartsWith("color", StringComparison.OrdinalIgnoreCase)
+                && !f.Name.Equals("colorFill", StringComparison.OrdinalIgnoreCase));
 
         foreach (var field in fields)
             field.SetValue(ui, color);
