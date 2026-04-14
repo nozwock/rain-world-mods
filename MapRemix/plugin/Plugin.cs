@@ -73,6 +73,7 @@ public partial class Plugin : BaseUnityPlugin
                 Logger.LogDebug($"Clearing DiscoveredMapAreas: {progressionData.DiscoveredMapAreas.Count}");
                 progressionData.DiscoveredMapAreas.Clear();
             };
+            config.cfgMapDiscoveryMode.OnChange += OnChange_MapDiscoveryMode;
             config.cfgInstantMapReveal.OnChange += OnChange_InstantMapReveal;
             config.cfgInstantDiscoveredAreaReveal.OnChange += OnChange_InstantDiscoveredAreaReveal;
 
@@ -99,6 +100,7 @@ public partial class Plugin : BaseUnityPlugin
             HookGen.UnpatchSelf();
             managedHooks.Dispose();
 
+            config.cfgMapDiscoveryMode.OnChange -= OnChange_MapDiscoveryMode;
             config.cfgInstantMapReveal.OnChange -= OnChange_InstantMapReveal;
             config.cfgInstantDiscoveredAreaReveal.OnChange -= OnChange_InstantDiscoveredAreaReveal;
         }
@@ -112,9 +114,7 @@ public partial class Plugin : BaseUnityPlugin
     {
         SaveGame.Init();
 
-        On.RoomCamera.MoveCamera_int += Hook_RoomCamera_MoveCamera_int;
-        On.RoomCamera.MoveCamera_Room_int += Hook_RoomCamera_MoveCamera_Room_int;
-
+        OnChange_MapDiscoveryMode();
         OnChange_InstantMapReveal();
         OnChange_InstantDiscoveredAreaReveal();
 
@@ -174,6 +174,21 @@ public partial class Plugin : BaseUnityPlugin
     {
         self.fadeCounter = 999999;
         orig(self);
+    }
+
+    void OnChange_MapDiscoveryMode()
+    {
+        On.RoomCamera.MoveCamera_int -= Hook_RoomCamera_MoveCamera_int;
+        On.RoomCamera.MoveCamera_Room_int -= Hook_RoomCamera_MoveCamera_Room_int;
+        switch (config.cfgMapDiscoveryMode.Value)
+        {
+            case MapDiscoveryMode.Vanilla:
+                break;
+            case MapDiscoveryMode.VisibleRoomArea:
+                On.RoomCamera.MoveCamera_int += Hook_RoomCamera_MoveCamera_int;
+                On.RoomCamera.MoveCamera_Room_int += Hook_RoomCamera_MoveCamera_Room_int;
+                break;
+        }
     }
 
     void Hook_RoomCamera_MoveCamera_int(

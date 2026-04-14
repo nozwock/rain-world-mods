@@ -1,10 +1,19 @@
 using System;
+using System.ComponentModel;
 using Common.RainWorld.UI;
 using Menu.Remix;
 using Menu.Remix.MixedUI;
 using UnityEngine;
 
 namespace MapRemix;
+
+public enum MapDiscoveryMode
+{
+    Vanilla,
+
+    [Description("Visible room area")]
+    VisibleRoomArea,
+}
 
 class RemixConfig : OptionInterface
 {
@@ -13,6 +22,7 @@ class RemixConfig : OptionInterface
 
     public Action? OnResetDiscoveredMapCache;
 
+    public Configurable<MapDiscoveryMode> cfgMapDiscoveryMode = new(MapDiscoveryMode.VisibleRoomArea);
     public Configurable<bool> cfgInstantDiscoveredAreaReveal = new(true);
     public Configurable<bool> cfgInstantMapReveal = new(true);
 
@@ -25,6 +35,11 @@ class RemixConfig : OptionInterface
             return;
 
         IsInit = true;
+
+        cfgMapDiscoveryMode = config.Bind(
+            "MapDiscoverMode",
+            defaultValue: cfgMapDiscoveryMode.Value,
+            new ConfigurableInfo("", tags: ["Map discovery mode"]));
 
         cfgInstantDiscoveredAreaReveal = config.Bind(
             "InstantDiscoveredAreaReveal",
@@ -55,6 +70,9 @@ class RemixConfig : OptionInterface
             new UIQueueEx.Spacing(40),
             new OpLabel.Queue("Map Remix", FLabelAlignment.Center, true),
             new UIQueueEx.Spacing(40),
+
+            new OpResourceSelector.QueueEnum(cfgMapDiscoveryMode),
+            new UIQueueEx.Spacing(10),
 
             new OpCheckBox.Queue(cfgInstantDiscoveredAreaReveal),
             new OpCheckBox.Queue(cfgInstantMapReveal),
