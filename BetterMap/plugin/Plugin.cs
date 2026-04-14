@@ -73,6 +73,7 @@ public partial class Plugin : BaseUnityPlugin
                 Logger.LogDebug($"Clearing DiscoveredMapAreas: {progressionData.DiscoveredMapAreas.Count}");
                 progressionData.DiscoveredMapAreas.Clear();
             };
+            config.cfgInstantMapReveal.OnChange += OnChange_InstantMapReveal;
 
             InitHooks();
         }
@@ -96,6 +97,8 @@ public partial class Plugin : BaseUnityPlugin
 
             HookGen.UnpatchSelf();
             managedHooks.Dispose();
+
+            config.cfgInstantMapReveal.OnChange -= OnChange_InstantMapReveal;
         }
         catch (Exception ex)
         {
@@ -112,6 +115,8 @@ public partial class Plugin : BaseUnityPlugin
 
         On.RoomCamera.MoveCamera_int += Hook_RoomCamera_MoveCamera_int;
         On.RoomCamera.MoveCamera_Room_int += Hook_RoomCamera_MoveCamera_Room_int;
+
+        OnChange_InstantMapReveal();
 
         SaveGame.ProgressionData.RegisterRead(Id, ProgressionData_Read);
         SaveGame.ProgressionData.RegisterWrite(Id, ProgressionData_Write);
@@ -144,6 +149,21 @@ public partial class Plugin : BaseUnityPlugin
     {
         if (config.cfgInstantDiscoveredAreaReveal.Value)
             self.resetRevealCounter = 0;
+        orig(self);
+    }
+
+    void OnChange_InstantMapReveal()
+    {
+        On.HUD.Map.Update -= Hook_Map_Update;
+        if (config.cfgInstantMapReveal.Value)
+        {
+            On.HUD.Map.Update += Hook_Map_Update;
+        }
+    }
+
+    void Hook_Map_Update(On.HUD.Map.orig_Update orig, HUD.Map self)
+    {
+        self.fadeCounter = 999999;
         orig(self);
     }
 

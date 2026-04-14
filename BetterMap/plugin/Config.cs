@@ -20,6 +20,7 @@ class RemixConfig : OptionInterface
     public Action? OnResetDiscoveredMapCache;
 
     public Configurable<bool> cfgInstantDiscoveredAreaReveal = new(true);
+    public Configurable<bool> cfgInstantMapReveal = new(true);
 
     public bool IsInit { get; private set; }
 
@@ -37,6 +38,13 @@ class RemixConfig : OptionInterface
             new ConfigurableInfo(
                 "Reveal all the discovered map areas instantly",
                 tags: ["Instant discovered areas reveal"]));
+
+        cfgInstantMapReveal = config.Bind(
+            "InstantMapReveal",
+            defaultValue: cfgInstantMapReveal.Value,
+            new ConfigurableInfo(
+                "Minimap will reveal itself instantly",
+                tags: ["Instant map reveal"]));
     }
 
     public override void Initialize()
@@ -56,6 +64,7 @@ class RemixConfig : OptionInterface
             new UIQueueEx.Spacing(40),
 
             new OpCheckBox.Queue(cfgInstantDiscoveredAreaReveal),
+            new OpCheckBox.Queue(cfgInstantMapReveal),
 
             new UIQueueEx.Spacing(10),
             new UIQueueEx.ColorNext(colorOrange),
