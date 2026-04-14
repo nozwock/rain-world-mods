@@ -26,6 +26,7 @@ class RemixConfig : OptionInterface
     public Configurable<MapDiscoveryMode> cfgMapDiscoveryMode = new(MapDiscoveryMode.VisibleRoomArea);
     public Configurable<bool> cfgInstantDiscoveredAreaReveal = new(true);
     public Configurable<bool> cfgInstantMapReveal = new(true);
+    public Configurable<bool> cfgWorkaroundInaccurateVisibleAreaBound = new(true);
 
     public bool IsInit { get; private set; }
 
@@ -55,6 +56,14 @@ class RemixConfig : OptionInterface
             new ConfigurableInfo(
                 "Minimap will reveal itself instantly",
                 tags: ["Instant map reveal"]));
+
+        cfgWorkaroundInaccurateVisibleAreaBound = config.Bind(
+            "WorkaroundInaccurateVisibleAreaBound",
+            defaultValue: cfgWorkaroundInaccurateVisibleAreaBound.Value,
+            new ConfigurableInfo(
+                "Restrict map discovery size to 8x5 for \"Visible room area\" mode "
+                + "(may not be ideal for non-default resolutions)",
+                tags: ["Workaround inaccurate visible area bounds"]));
     }
 
     public override void Initialize()
@@ -77,6 +86,9 @@ class RemixConfig : OptionInterface
 
             new OpCheckBox.Queue(cfgInstantDiscoveredAreaReveal),
             new OpCheckBox.Queue(cfgInstantMapReveal),
+
+            new UIQueueEx.Spacing(10),
+            new OpCheckBox.Queue(cfgWorkaroundInaccurateVisibleAreaBound),
 
             new UIQueueEx.Spacing(10),
             new UIQueueEx.ColorNext(colorOrange),
