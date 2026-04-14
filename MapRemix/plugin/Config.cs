@@ -82,10 +82,10 @@ class RemixConfig : OptionInterface
             new UIQueueEx.ColorNext(colorOrange),
             new OpHoldButton.QueueRectangular("CLEAR", "Clear cache for discovered map areas")
             {
+                description = Translate("Cache keeps track of discovered areas to avoid uncovering them again"),
               onPressDone = (_) => {
                 ConfigConnector.CreateDialogBoxNotify(
-                    Translate("Mod's cache for discovered map areas will be cleared after this prompt, "
-                    + "the cache is used to avoid trying to uncover already discovered areas.")
+                    Translate("Mod's cache for discovered map areas will be cleared after this prompt.")
                     + "\n\n"
                     + Translate("To persist the cleared cache in the savefile, you need to enter and exit a game mode."),
                     () => {
