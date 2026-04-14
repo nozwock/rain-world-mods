@@ -271,7 +271,7 @@ public partial class Plugin : BaseUnityPlugin
                     if (progressionData.DiscoveredRoomAreas.Contains(mapAreaId))
                         return;
 
-                    rect = GetVisibleRoomArea(map, room, 0);
+                    rect = GetVisibleRoomArea(map, camera, room, 0);
                     if (config.cfgWorkaroundInaccurateVisibleAreaBound.Value)
                     {
                         // What we get from GetVisibleRoomArea (map scale) actually covers an area that's slightly
@@ -325,11 +325,13 @@ public partial class Plugin : BaseUnityPlugin
         return (start, end);
     }
 
-    static (IntVector2 Start, IntVector2 End) GetVisibleRoomArea(HUD.Map map, Room room, int margin)
+    static (IntVector2 Start, IntVector2 End) GetVisibleRoomArea(
+        HUD.Map map,
+        RoomCamera camera,
+        Room room,
+        int margin)
     {
-        // There's room.aidataprepro.aiMap.getAITile(x, y).visibility from AIdataPreprocessor.VisibilityMapper that was
-        // tried before GetVisibleRect was found but it seems to be vision cone for the creature AI
-        var rect = room.game.cameras[0].GetVisibleRect(margin, widescreen: false);
+        var rect = camera.GetVisibleRect(margin, widescreen: false);
         var start = IntVector2.FromVector2(
             map.OnTexturePos(
                 new(rect.xMin, rect.yMin),
