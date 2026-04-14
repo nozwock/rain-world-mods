@@ -181,21 +181,18 @@ public static class UIQueueEx
             }
         }
 
-        holder.AddItems([.. widgets]);
-
-        // NOTE: Put elements with container at the top, otherwise the container will be rendered beneath those elements
-        // constructed before them in the queues order
-        // The order is kept in the the holder. You may manually decide the order of rendering based on the sequence of
-        // elements in the array that is passed to IHoldUIElements.AddItems.
+        // We're reversing the order so that the earlier queue elements gets rendered over those that come after.
+        //
+        // NOTE: The items added the last to a IHoldUIElements gets rendered over those before them, this is important
+        // to notice because if let's say a combobox that's laid out above gets added before elements below to it, then
+        // the options list will be rendered beneath the elements below to it.
+        //
+        // Methods like UIelement.MoveToFront can be used after elements are added to a holder to change the render
+        // order for the element.
         //
         // There's also this https://github.com/alduris/id-finder/blob/bfe59d37f3abaea42e59a11c9eebc6605827001e/src/OpFixes.cs
         // but it doesn't looks like it's needed, the issue was simply the order in the holder it seems
-        foreach (var ui in widgets.Where(ui => ui is OpComboBox))
-        {
-            // TODO: Define a default render order for various elements with similar cases and the ability for the user
-            // to manually specify render order for the queue
-            ui.MoveToFront();
-        }
+        holder.AddItems([.. widgets.AsEnumerable().Reverse()]);
 
         UIfocusable? uIfocusable = null;
         foreach (var queue in queues.OfType<UIfocusable.FocusableQueue>())
