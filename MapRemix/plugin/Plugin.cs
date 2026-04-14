@@ -231,17 +231,14 @@ public partial class Plugin : BaseUnityPlugin
         if (map.hud.owner is not Player player)
             return map.hud.owner.MapDiscoveryActive;
 
+        // Removing room bounds check as it sometimes give false when we do want Uncover room to proceed
         if (
             player.Consious
             && player.AI == null
             && player.abstractCreature.Room?.realizedRoom is { } room
-            && !room.world.singleRoomWorld
-            && player.dangerGrasp == null
-            && player.mainBodyChunk.pos.x > 0f
-            && player.mainBodyChunk.pos.x < room.PixelWidth
-            && player.mainBodyChunk.pos.y > 0f)
+            && !room.world.singleRoomWorld)
         {
-            return player.mainBodyChunk.pos.y < room.PixelHeight;
+            return player.dangerGrasp == null;
         }
 
         return false;
