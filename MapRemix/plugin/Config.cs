@@ -10,9 +10,9 @@ namespace MapRemix;
 public enum MapDiscoveryMode
 {
     Vanilla,
-    [Description("Visible room area")]
+    [Description("Visible Room Area")]
     VisibleRoomArea,
-    [Description("Whole room")]
+    [Description("Whole Room")]
     WholeRoom,
 }
 
