@@ -77,6 +77,15 @@ public static class UIQueueEx
         };
     }
 
+    public static void InitializeQueues(IHoldUIelements holder, ref float offsetY, params IEnumerable<object> queues)
+        => InitializeQueues(holder, ref offsetY, posX: default, spacing: default, queues);
+
+    public static void InitializeQueues(IHoldUIelements holder, params IEnumerable<object> queues)
+    {
+        float offsetY = 0;
+        InitializeQueues(holder, ref offsetY, posX: default, spacing: default, queues);
+    }
+
     public static void InitializeQueues(
         IHoldUIelements holder,
         ref float offsetY,
