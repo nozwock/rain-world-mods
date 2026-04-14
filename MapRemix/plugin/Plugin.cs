@@ -264,7 +264,7 @@ public partial class Plugin : BaseUnityPlugin
             var mapAreaId = new ProgressionData.MapAreaId(room.abstractRoom.name, camPos);
             var discoveryMode = config.cfgMapDiscoveryMode.Value;
 
-            (IntVector2 start, IntVector2 end) rect;
+            (IntVector2 Start, IntVector2 End) rect;
             switch (discoveryMode)
             {
                 case MapDiscoveryMode.VisibleRoomArea:
@@ -303,7 +303,7 @@ public partial class Plugin : BaseUnityPlugin
         }
     }
 
-    static (IntVector2, IntVector2) GetRoomArea(HUD.Map map, Room room)
+    static (IntVector2 Start, IntVector2 End) GetRoomArea(HUD.Map map, Room room)
     {
         // https://github.com/SchuhBaum/MapOptions/blob/4a798511f82bcde75206e3f4a6c9351465d819ea/SourceCode/MapMod.cs#L370
         var start = IntVector2.FromVector2(
@@ -321,7 +321,7 @@ public partial class Plugin : BaseUnityPlugin
         return (start, end);
     }
 
-    static (IntVector2, IntVector2) GetVisibleRoomArea(HUD.Map map, Room room, int margin)
+    static (IntVector2 Start, IntVector2 End) GetVisibleRoomArea(HUD.Map map, Room room, int margin)
     {
         // There's room.aidataprepro.aiMap.getAITile(x, y).visibility from AIdataPreprocessor.VisibilityMapper that was
         // tried before GetVisibleRect was found but it seems to be vision cone for the creature AI
