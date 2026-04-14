@@ -308,23 +308,8 @@ public partial class Plugin : BaseUnityPlugin
     }
 
     static (IntVector2 Start, IntVector2 End) GetMapRoomRect(HUD.Map map, Room room)
-    {
-        // https://github.com/SchuhBaum/MapOptions/blob/4a798511f82bcde75206e3f4a6c9351465d819ea/SourceCode/MapMod.cs#L370
-        var rect = room.RoomRect;
-        var start = IntVector2.FromVector2(
-            map.OnTexturePos(
-                new(rect.left, rect.bottom),
-                room.abstractRoom.index,
-                accountForLayer: true)
-            / map.DiscoverResolution);
-        var end = IntVector2.FromVector2(
-            map.OnTexturePos(
-                new(rect.right, rect.top),
-                room.abstractRoom.index,
-                accountForLayer: true)
-            / map.DiscoverResolution);
-        return (start, end);
-    }
+        => (GetMapTexturePos(new(room.RoomRect.left, room.RoomRect.bottom), map, room),
+                GetMapTexturePos(new(room.RoomRect.right, room.RoomRect.top), map, room));
 
     static (IntVector2 Start, IntVector2 End) GetMapRoomAreaRect(
         HUD.Map map,
@@ -332,21 +317,13 @@ public partial class Plugin : BaseUnityPlugin
         Room room,
         int camPos)
     {
-        var rect = GetRoomAreaRect(camera, room, camPos);
-        var start = IntVector2.FromVector2(
-            map.OnTexturePos(
-                rect.Start,
-                room.abstractRoom.index,
-                accountForLayer: true)
-            / map.DiscoverResolution);
-        var end = IntVector2.FromVector2(
-            map.OnTexturePos(
-                rect.End,
-                room.abstractRoom.index,
-                accountForLayer: true)
-            / map.DiscoverResolution);
-        return (start, end);
+        var (Start, End) = GetRoomAreaRect(camera, room, camPos);
+        return (GetMapTexturePos(Start, map, room), GetMapTexturePos(End, map, room));
     }
+
+    static IntVector2 GetMapTexturePos(Vector2 pos, HUD.Map map, Room room)
+        => IntVector2.FromVector2(
+            map.OnTexturePos(pos, room.abstractRoom.index, accountForLayer: true) / map.DiscoverResolution);
 
     static (Vector2 Start, Vector2 End) GetRoomAreaRect(RoomCamera camera, Room room, int camPos)
     {
