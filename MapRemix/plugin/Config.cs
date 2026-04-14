@@ -48,8 +48,7 @@ class RemixConfig : OptionInterface
         var tab = new OpTab(this);
         Tabs = [tab];
 
-        var offsetY = 0f;
-        UIQueueEx.InitializeQueues(tab, ref offsetY, posX: default, spacing: default,
+        UIQueueEx.InitializeQueues(tab,
         [
             new UIQueueEx.ModifyQueueAll(UIQueueEx.SetButtonAtleastSizeX(120)),
 
