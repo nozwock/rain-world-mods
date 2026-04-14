@@ -23,7 +23,7 @@ class RemixConfig : OptionInterface
 
     public Action? OnResetDiscoveredMapCache;
 
-    public Configurable<MapDiscoveryMode> cfgMapDiscoveryMode = new(MapDiscoveryMode.VisibleRoomArea);
+    public Configurable<MapDiscoveryMode> cfgMapDiscoveryMode = new(MapDiscoveryMode.WholeRoom);
     public Configurable<bool> cfgInstantDiscoveredAreaReveal = new(true);
     public Configurable<bool> cfgInstantMapReveal = new(true);
     public Configurable<bool> cfgWorkaroundInaccurateVisibleAreaBound = new(true);
