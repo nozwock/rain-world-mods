@@ -5,6 +5,7 @@ using Common.Hooks;
 using Common.RainWorld;
 using Newtonsoft.Json;
 using RWCustom;
+using UnityEngine;
 
 namespace MapRemix;
 
@@ -271,7 +272,7 @@ public partial class Plugin : BaseUnityPlugin
                     if (progressionData.DiscoveredRoomAreas.Contains(mapAreaId))
                         return;
 
-                    rect = GetVisibleRoomArea(map, camera, room, 0);
+                    rect = GetMapRoomAreaRect(map, camera, room, camPos);
                     if (config.cfgWorkaroundInaccurateVisibleAreaBound.Value)
                     {
                         // What we get from GetVisibleRoomArea (map scale) actually covers an area that's slightly
@@ -284,7 +285,7 @@ public partial class Plugin : BaseUnityPlugin
                     }
                     break;
                 case MapDiscoveryMode.WholeRoom:
-                    rect = GetRoomArea(map, room);
+                    rect = GetMapRoomRect(map, room);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(discoveryMode));
@@ -306,7 +307,7 @@ public partial class Plugin : BaseUnityPlugin
         }
     }
 
-    static (IntVector2 Start, IntVector2 End) GetRoomArea(HUD.Map map, Room room)
+    static (IntVector2 Start, IntVector2 End) GetMapRoomRect(HUD.Map map, Room room)
     {
         // https://github.com/SchuhBaum/MapOptions/blob/4a798511f82bcde75206e3f4a6c9351465d819ea/SourceCode/MapMod.cs#L370
         var rect = room.RoomRect;
@@ -325,26 +326,35 @@ public partial class Plugin : BaseUnityPlugin
         return (start, end);
     }
 
-    static (IntVector2 Start, IntVector2 End) GetVisibleRoomArea(
+    static (IntVector2 Start, IntVector2 End) GetMapRoomAreaRect(
         HUD.Map map,
         RoomCamera camera,
         Room room,
-        int margin)
+        int camPos)
     {
-        var rect = camera.GetVisibleRect(margin, widescreen: false);
+        var rect = GetRoomAreaRect(camera, room, camPos);
         var start = IntVector2.FromVector2(
             map.OnTexturePos(
-                new(rect.xMin, rect.yMin),
+                rect.Start,
                 room.abstractRoom.index,
                 accountForLayer: true)
             / map.DiscoverResolution);
         var end = IntVector2.FromVector2(
             map.OnTexturePos(
-                new(rect.xMax, rect.yMax),
+                rect.End,
                 room.abstractRoom.index,
                 accountForLayer: true)
             / map.DiscoverResolution);
         return (start, end);
+    }
+
+    static (Vector2 Start, Vector2 End) GetRoomAreaRect(RoomCamera camera, Room room, int camPos)
+    {
+        // RoomCamera.GetVisibleRect just has some weird assumptions and gives wrong bounds
+        var pos = room.cameraPositions[camPos];
+        pos.x += camera.hDisplace + 8;
+        pos.y += 18;
+        return (new(pos.x, pos.y), new(pos.x + camera.sSize.x, pos.y + camera.sSize.y));
     }
 
     static void NormalizeDifference(ref int start, ref int end, int targetDiff)
