@@ -41,7 +41,7 @@ public partial class Plugin : BaseUnityPlugin
     ManagedHooks managedHooks;
     ProgressionData progressionData = new();
 
-    Configurable<bool> cfgInstantMapReveal = new(true);
+    static RemixConfig config = new(null);
 
     public Plugin()
     {
@@ -62,13 +62,17 @@ public partial class Plugin : BaseUnityPlugin
 
         try
         {
-            var optionInterface = MachineConnector.GetRegisteredOI(Id);
-            var config = optionInterface.config;
+            if (!config.IsInit)
+            {
+                config = new();
+                MachineConnector.SetRegisteredOI(Id, config);
+            }
 
-            cfgInstantMapReveal = config.Bind(
-                "InstantMapRevealDiscovered",
-                cfgInstantMapReveal.Value,
-                new ConfigurableInfo("Reveal all of the discovered map instantly once the map is opened"));
+            config.OnResetDiscoveredMapCache = () =>
+            {
+                Logger.LogDebug($"Clearing DiscoveredMapAreas: {progressionData.DiscoveredMapAreas.Count}");
+                progressionData.DiscoveredMapAreas.Clear();
+            };
 
             InitHooks();
         }
@@ -132,13 +136,13 @@ public partial class Plugin : BaseUnityPlugin
         orig(self, hud, mapData);
 
         // Game sets revealAllDiscovered for fast travel/region map
-        if (cfgInstantMapReveal.Value)
+        if (config.cfgInstantMapReveal.Value)
             self.revealAllDiscovered = true;
     }
 
     void Hook_Map_InitiateMapView(On.HUD.Map.orig_InitiateMapView orig, HUD.Map self)
     {
-        if (cfgInstantMapReveal.Value)
+        if (config.cfgInstantMapReveal.Value)
             self.resetRevealCounter = 0;
         orig(self);
     }
