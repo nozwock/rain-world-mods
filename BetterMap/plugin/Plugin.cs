@@ -136,13 +136,13 @@ public partial class Plugin : BaseUnityPlugin
         orig(self, hud, mapData);
 
         // Game sets revealAllDiscovered for fast travel/region map
-        if (config.cfgInstantMapReveal.Value)
+        if (config.cfgInstantDiscoveredAreaReveal.Value)
             self.revealAllDiscovered = true;
     }
 
     void Hook_Map_InitiateMapView(On.HUD.Map.orig_InitiateMapView orig, HUD.Map self)
     {
-        if (config.cfgInstantMapReveal.Value)
+        if (config.cfgInstantDiscoveredAreaReveal.Value)
             self.resetRevealCounter = 0;
         orig(self);
     }

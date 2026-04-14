@@ -19,7 +19,7 @@ class RemixConfig : OptionInterface
 
     public Action? OnResetDiscoveredMapCache;
 
-    public Configurable<bool> cfgInstantMapReveal = new(true);
+    public Configurable<bool> cfgInstantDiscoveredAreaReveal = new(true);
 
     public bool IsInit { get; private set; }
 
@@ -31,12 +31,12 @@ class RemixConfig : OptionInterface
 
         IsInit = true;
 
-        cfgInstantMapReveal = config.Bind(
-            "InstantMapRevealDiscovered",
-            defaultValue: cfgInstantMapReveal.Value,
+        cfgInstantDiscoveredAreaReveal = config.Bind(
+            "InstantDiscoveredAreaReveal",
+            defaultValue: cfgInstantDiscoveredAreaReveal.Value,
             new ConfigurableInfo(
-                "Reveal all of the discovered map instantly once the map is opened",
-                tags: ["Instantly reveal discovered map"]));
+                "Reveal all the discovered map areas instantly",
+                tags: ["Instant discovered areas reveal"]));
     }
 
     public override void Initialize()
@@ -55,7 +55,7 @@ class RemixConfig : OptionInterface
             new OpLabel.Queue("Better Map", FLabelAlignment.Center, true),
             new UIQueueEx.Spacing(40),
 
-            new OpCheckBox.Queue(cfgInstantMapReveal),
+            new OpCheckBox.Queue(cfgInstantDiscoveredAreaReveal),
 
             new UIQueueEx.Spacing(10),
             new UIQueueEx.ColorNext(colorOrange),
