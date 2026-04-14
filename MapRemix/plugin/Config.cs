@@ -10,9 +10,10 @@ namespace MapRemix;
 public enum MapDiscoveryMode
 {
     Vanilla,
-
     [Description("Visible room area")]
     VisibleRoomArea,
+    [Description("Whole room")]
+    WholeRoom,
 }
 
 class RemixConfig : OptionInterface

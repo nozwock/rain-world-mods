@@ -184,7 +184,7 @@ public partial class Plugin : BaseUnityPlugin
         {
             case MapDiscoveryMode.Vanilla:
                 break;
-            case MapDiscoveryMode.VisibleRoomArea:
+            case MapDiscoveryMode.VisibleRoomArea or MapDiscoveryMode.WholeRoom:
                 On.RoomCamera.MoveCamera_int += Hook_RoomCamera_MoveCamera_int;
                 On.RoomCamera.MoveCamera_Room_int += Hook_RoomCamera_MoveCamera_Room_int;
                 break;
@@ -199,7 +199,7 @@ public partial class Plugin : BaseUnityPlugin
         orig(self, camPos);
         try
         {
-            UncoverVisibleRoomArea(self, camPos);
+            UncoverRoom(self, camPos);
         }
         catch (Exception ex)
         {
@@ -216,7 +216,7 @@ public partial class Plugin : BaseUnityPlugin
         orig(self, newRoom, camPos);
         try
         {
-            UncoverVisibleRoomArea(self, camPos);
+            UncoverRoom(self, camPos);
         }
         catch (Exception ex)
         {
@@ -247,7 +247,7 @@ public partial class Plugin : BaseUnityPlugin
         return false;
     }
 
-    void UncoverVisibleRoomArea(RoomCamera camera, int camPos)
+    void UncoverRoom(RoomCamera camera, int camPos)
     {
         var map = camera.hud?.map;
         if (map is null)
@@ -259,11 +259,30 @@ public partial class Plugin : BaseUnityPlugin
             && MapDiscoveryActive(map)
             && map.discoverTexture is { } discoverTexture
             && map.hud.owner is Player player
-            && player.abstractCreature.Room?.realizedRoom is { } room
-            && !progressionData.DiscoveredMapAreas.ContainsKey(new(room.abstractRoom.name, camPos)))
+            && player.abstractCreature.Room?.realizedRoom is { } room)
         {
-            var (start, end) = GetVisibleRoomArea(map, room, 0);
+            var mapAreaId = new ProgressionData.MapAreaId(room.abstractRoom.name, camPos);
+            var discoveryMode = config.cfgMapDiscoveryMode.Value;
 
+            (IntVector2 start, IntVector2 end) rect;
+            switch (discoveryMode)
+            {
+                case MapDiscoveryMode.VisibleRoomArea:
+                    if (progressionData.DiscoveredMapAreas.ContainsKey(mapAreaId))
+                        return;
+                    rect = GetVisibleRoomArea(map, room, 0);
+                    break;
+                case MapDiscoveryMode.WholeRoom:
+                    if (progressionData.DiscoveredMapAreas.TryGetValue(mapAreaId, out var roomUncovered)
+                        && roomUncovered)
+                        return;
+                    rect = GetRoomArea(map, room);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(discoveryMode));
+            }
+
+            var (start, end) = rect;
             for (var x = start.x; x <= end.x; x++)
             {
                 for (var y = start.y; y <= end.y; y++)
@@ -272,8 +291,34 @@ public partial class Plugin : BaseUnityPlugin
                 }
             }
 
-            progressionData.DiscoveredMapAreas.Add(new(room.abstractRoom.name, camPos), false);
+            if (progressionData.DiscoveredMapAreas.ContainsKey(mapAreaId))
+            {
+                if (discoveryMode == MapDiscoveryMode.WholeRoom)
+                    progressionData.DiscoveredMapAreas[mapAreaId] = true;
+            }
+            else
+            {
+                progressionData.DiscoveredMapAreas.Add(mapAreaId, discoveryMode == MapDiscoveryMode.WholeRoom);
+            }
         }
+    }
+
+    static (IntVector2, IntVector2) GetRoomArea(HUD.Map map, Room room)
+    {
+        // https://github.com/SchuhBaum/MapOptions/blob/4a798511f82bcde75206e3f4a6c9351465d819ea/SourceCode/MapMod.cs#L370
+        var start = IntVector2.FromVector2(
+            map.OnTexturePos(
+                new(),
+                room.abstractRoom.index,
+                accountForLayer: true)
+            / map.DiscoverResolution);
+        var end = IntVector2.FromVector2(
+            map.OnTexturePos(
+                room.abstractRoom.size.ToVector2() * 20,
+                room.abstractRoom.index,
+                accountForLayer: true)
+            / map.DiscoverResolution);
+        return (start, end);
     }
 
     static (IntVector2, IntVector2) GetVisibleRoomArea(HUD.Map map, Room room, int margin)
