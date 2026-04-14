@@ -309,15 +309,16 @@ public partial class Plugin : BaseUnityPlugin
     static (IntVector2 Start, IntVector2 End) GetRoomArea(HUD.Map map, Room room)
     {
         // https://github.com/SchuhBaum/MapOptions/blob/4a798511f82bcde75206e3f4a6c9351465d819ea/SourceCode/MapMod.cs#L370
+        var rect = room.RoomRect;
         var start = IntVector2.FromVector2(
             map.OnTexturePos(
-                new(),
+                new(rect.left, rect.bottom),
                 room.abstractRoom.index,
                 accountForLayer: true)
             / map.DiscoverResolution);
         var end = IntVector2.FromVector2(
             map.OnTexturePos(
-                room.abstractRoom.size.ToVector2() * 20,
+                new(rect.right, rect.top),
                 room.abstractRoom.index,
                 accountForLayer: true)
             / map.DiscoverResolution);
