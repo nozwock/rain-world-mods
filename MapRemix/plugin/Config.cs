@@ -1,14 +1,8 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using BepInEx.Logging;
-using Common.RainWorld;
 using Common.RainWorld.UI;
 using Menu.Remix;
 using Menu.Remix.MixedUI;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace MapRemix;
 
