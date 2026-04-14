@@ -153,7 +153,14 @@ public partial class Plugin : BaseUnityPlugin
         int camPos)
     {
         orig(self, camPos);
-        UncoverVisibleRoomArea(self, camPos);
+        try
+        {
+            UncoverVisibleRoomArea(self, camPos);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex);
+        }
     }
 
     void Hook_RoomCamera_MoveCamera_Room_int(
@@ -163,7 +170,14 @@ public partial class Plugin : BaseUnityPlugin
         int camPos)
     {
         orig(self, newRoom, camPos);
-        UncoverVisibleRoomArea(self, camPos);
+        try
+        {
+            UncoverVisibleRoomArea(self, camPos);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex);
+        }
     }
 
     // Original Player.MapDiscoveryActive always returns false within MoveCamera due to player.room which always seem to
