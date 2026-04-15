@@ -122,6 +122,7 @@ public partial class Plugin : BaseUnityPlugin
             HookGen.UnpatchSelf();
             managedHooks.Dispose();
 
+            config.OnResetDiscoveredMapCache = null;
             config.cfgMapDiscoveryMode.OnChange -= OnChange_MapDiscoveryMode;
             config.cfgInstantMapReveal.OnChange -= OnChange_InstantMapReveal;
             config.cfgInstantDiscoveredAreaReveal.OnChange -= OnChange_InstantDiscoveredAreaReveal;
