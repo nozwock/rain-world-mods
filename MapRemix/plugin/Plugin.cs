@@ -11,9 +11,30 @@ namespace MapRemix;
 
 public class ProgressionData
 {
-    // Newtonsoft doesn't seem to support complex types as dictionary keys by default
+    [JsonConverter(typeof(RoomAreaIdConverter))]
     public record struct RoomAreaId(string RoomName, int CamPos)
     {
+        // To save space, use our custom to/from string when type is not used as dictionary key, instead of the default
+        // object converter
+        class RoomAreaIdConverter : JsonConverter<RoomAreaId>
+        {
+            public override void WriteJson(JsonWriter writer, RoomAreaId value, JsonSerializer serializer)
+                => writer.WriteValue(value.ToString());
+
+            public override RoomAreaId ReadJson(
+                JsonReader reader,
+                Type objectType,
+                RoomAreaId existingValue,
+                bool hasExistingValue,
+                JsonSerializer serializer)
+            {
+                if (reader.TokenType == JsonToken.String)
+                    return (RoomAreaId)(string)reader.Value!;
+                throw new JsonSerializationException($"Unexpected token {reader.TokenType}");
+            }
+        }
+
+        // Newtonsoft doesn't seem to support complex types as dictionary keys by default
         // https://github.com/JamesNK/Newtonsoft.Json/issues/516#issuecomment-1325112839
         public static explicit operator RoomAreaId(string value)
         {
