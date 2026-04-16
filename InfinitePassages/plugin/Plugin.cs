@@ -199,10 +199,8 @@ public partial class Plugin : BaseUnityPlugin
     {
         var cursor = new ILCursor(il);
 
-        var name = nameof(ProcessManager.ProcessID.CustomEndGameScreen);
         cursor.GotoNext(MoveType.Before,
-            i => i.MatchLdsfld<ProcessManager.ProcessID>(name)
-                || i.MatchLdfld<ProcessManager.ProcessID>(name),
+            i => i.MatchLdsfld<ProcessManager.ProcessID>(nameof(ProcessManager.ProcessID.CustomEndGameScreen)),
             i => i.MatchCallOrCallvirt<ProcessManager>(nameof(ProcessManager.RequestMainProcessSwitch)));
 
         var field = typeof(ProcessManager.ProcessID)
